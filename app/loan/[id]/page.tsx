@@ -17,6 +17,8 @@ export default function LoanDetailPage() {
   const [commentModal, setCommentModal] = useState<'approve' | 'reject' | null>(null)
   const [comment, setComment] = useState('')
   const [modalLoading, setModalLoading] = useState(false)
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({})
+  const [previewFile, setPreviewFile] = useState<{ url: string; fileName: string } | null>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('loan_user')
@@ -83,10 +85,27 @@ export default function LoanDetailPage() {
     }
   }
 
-  const getFileUrl = (path: string) => {
-    const { data } = supabase.storage.from('loan-docs').getPublicUrl(path)
-    return data.publicUrl
-  }
+  useEffect(() => {
+    if (!loan?.loan_attachments?.length) return
+    const attachments = loan.loan_attachments as LoanAttachment[]
+    const loadUrls = async () => {
+      const map: Record<string, string> = {}
+      for (const att of attachments) {
+        const { data } = await supabase.storage.from('loan-docs').createSignedUrl(att.file_path, 3600)
+        if (data?.signedUrl) {
+          map[att.file_path] = data.signedUrl
+        } else {
+          const { data: pub } = supabase.storage.from('loan-docs').getPublicUrl(att.file_path)
+          map[att.file_path] = pub?.publicUrl ?? '#'
+        }
+      }
+      setFileUrls((prev) => ({ ...prev, ...map }))
+    }
+    loadUrls()
+  }, [loan?.id, loan?.loan_attachments])
+
+  const isImage = (name: string) => /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)
+  const isPdf = (name: string) => /\.pdf$/i.test(name)
 
   if (user == null) {
     return (
@@ -215,18 +234,24 @@ export default function LoanDetailPage() {
             <p className="text-gray-500 text-sm">ไม่มีไฟล์แนบ</p>
           ) : (
             <ul className="space-y-2">
-              {attachments.map((att) => (
-                <li key={att.id}>
-                  <a
-                    href={getFileUrl(att.file_path)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-red-700 hover:underline py-2 inline-block min-h-[44px] flex items-center break-all"
-                  >
-                    {att.file_name} (เปิดดู)
-                  </a>
-                </li>
-              ))}
+              {attachments.map((att) => {
+                const url = fileUrls[att.file_path]
+                return (
+                  <li key={att.id}>
+                    {url ? (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewFile({ url, fileName: att.file_name })}
+                        className="text-red-700 hover:underline py-2 inline-block min-h-[44px] flex items-center break-all text-left w-full"
+                      >
+                        {att.file_name} (เปิดดู)
+                      </button>
+                    ) : (
+                      <span className="text-gray-500 py-2 inline-block">{att.file_name} (กำลังโหลดลิงก์…)</span>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           )}
         </div>
@@ -274,6 +299,58 @@ export default function LoanDetailPage() {
             onChange={(e) => setComment(e.target.value)}
           />
         </div>
+      </Modal>
+
+      <Modal
+        title={previewFile?.fileName ?? 'พรีวิวเอกสาร'}
+        open={previewFile != null}
+        onCancel={() => setPreviewFile(null)}
+        footer={previewFile ? (
+          <a
+            href={previewFile.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-red-700 hover:underline"
+          >
+            เปิดในแท็บใหม่
+          </a>
+        ) : null}
+        width="min(100vw - 2rem, 900px)"
+        centered
+        styles={{ body: { maxHeight: '80vh', overflow: 'auto' } }}
+        destroyOnClose
+      >
+        {previewFile && (
+          <div key={previewFile.url} className="flex justify-center bg-gray-100 rounded-lg min-h-[200px]">
+            {isImage(previewFile.fileName) ? (
+              <img
+                key={previewFile.url}
+                src={previewFile.url}
+                alt={previewFile.fileName}
+                className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+              />
+            ) : isPdf(previewFile.fileName) ? (
+              <iframe
+                key={previewFile.url}
+                src={previewFile.url}
+                title={previewFile.fileName}
+                className="w-full min-h-[70vh] border-0 rounded"
+              />
+            ) : (
+              <div className="p-6 text-center text-gray-600">
+                <p className="mb-4">ไม่สามารถพรีวิวไฟล์นี้ในหน้าต่างได้</p>
+                <a
+                  href={previewFile.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-red-700 hover:underline"
+                >
+                  เปิดในแท็บใหม่
+                </a>
+              </div>
+            )}
+          </div>
+        )}
       </Modal>
     </div>
   )
