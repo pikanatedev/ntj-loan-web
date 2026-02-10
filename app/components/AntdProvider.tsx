@@ -2,6 +2,7 @@
 
 import '@/lib/dayjs'
 import { ConfigProvider } from 'antd'
+import type { Locale } from 'antd/es/locale'
 import thTH from 'antd/locale/th_TH'
 
 const theme = {
@@ -12,29 +13,14 @@ const theme = {
   },
 }
 
+const datePickerLang = thTH.DatePicker?.lang ? { ...thTH.DatePicker.lang, yearFormat: 'BBBB', monthFormat: 'MMMM', cellYearFormat: 'BBBB', fieldYearFormat: 'BBBB' } : undefined
+const calendarLang = thTH.Calendar?.lang ? { ...thTH.Calendar.lang, yearFormat: 'BBBB', monthFormat: 'MMMM', cellYearFormat: 'BBBB', fieldYearFormat: 'BBBB' } : undefined
+
 const locale = {
   ...thTH,
-  DatePicker: {
-    ...thTH.DatePicker,
-    lang: {
-      ...(thTH.DatePicker as { lang?: Record<string, unknown> })?.lang,
-      yearFormat: 'BBBB',
-      monthFormat: 'MMMM',
-      cellYearFormat: 'BBBB',
-      fieldYearFormat: 'BBBB',
-    },
-  },
-  Calendar: {
-    ...thTH.Calendar,
-    lang: {
-      ...(thTH.Calendar as { lang?: Record<string, unknown> })?.lang,
-      yearFormat: 'BBBB',
-      monthFormat: 'MMMM',
-      cellYearFormat: 'BBBB',
-      fieldYearFormat: 'BBBB',
-    },
-  },
-}
+  DatePicker: datePickerLang ? { ...thTH.DatePicker, lang: datePickerLang } : thTH.DatePicker,
+  Calendar: calendarLang ? { ...thTH.Calendar, lang: calendarLang } : thTH.Calendar,
+} as Locale
 
 export function AntdProvider({ children }: { children: React.ReactNode }) {
   return (
