@@ -7,6 +7,7 @@ const theme = {
   token: {
     colorPrimary: '#b91c1c',
     borderRadius: 6,
+    fontFamily: "var(--font-prompt), 'Prompt', ui-sans-serif, system-ui, sans-serif",
   },
 }
 

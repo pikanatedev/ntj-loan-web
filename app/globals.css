@@ -23,6 +23,17 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
+/* บังคับฟอนต์ Prompt ให้ทุกข้อความรวม Ant Design */
+body,
+input, button, select, textarea,
+.ant-btn, .ant-input, .ant-input-number, .ant-input-number-input,
+.ant-picker, .ant-picker-input input,
+.ant-form-item-label, .ant-form-item-label label,
+.ant-modal-title, .ant-upload, .ant-message,
+[class^="ant-"]:not([class*="icon"]) {
+  font-family: var(--font-prompt), 'Prompt', ui-sans-serif, system-ui, sans-serif !important;
+}
+
 /* ปุ่ม/ลิงก์ กดง่ายบนมือถือ (min height ~44px) */
 @media (pointer: coarse) {
   button:not(.ant-btn),
