@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
+import "@/lib/dayjs";
 import { AntdProvider } from "./components/AntdProvider";
 import { Header } from "./components/Header";
 import { ScrollToTop } from "./components/ScrollToTop";

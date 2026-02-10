@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { message, Input, Select, Pagination, DatePicker, Button } from 'antd'
 import type { Dayjs } from 'dayjs'
+import { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase } from '@/lib/supabaseClient'
 import type { StaffUser, Loan } from '@/lib/types'
 import { formatNum, formatDate } from '@/lib/types'
@@ -173,7 +174,7 @@ export default function ListPage() {
         <h2 className="font-bold text-base sm:text-lg text-red-700">รายการสินเชื่อทั้งหมด</h2>
 
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">ค้นหา</label>
               <Input.Search
@@ -203,7 +204,7 @@ export default function ListPage() {
                 size="large"
               />
             </div>
-            <div>
+            <div className="lg:col-span-2 min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่เสนอสินเชื่อ</label>
               <RangePicker
                 value={submissionDateRange}
@@ -211,9 +212,9 @@ export default function ListPage() {
                   setSubmissionDateRange(dates ?? null)
                   setCurrentPage(1)
                 }}
-                className="w-full [&_.ant-picker-input>input]:!rounded-lg"
+                className="w-full [&_.ant-picker-input>input]:!rounded-lg [&_.ant-picker-input]:!min-w-[8rem]"
                 size="large"
-                format="DD/MM/YYYY"
+                format={DATE_DISPLAY_FORMAT}
                 placeholder={['เริ่มต้น', 'สิ้นสุด']}
               />
             </div>

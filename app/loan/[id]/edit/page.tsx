@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Form, Input, InputNumber, DatePicker, Upload, Button, message } from 'antd'
 import type { UploadFile } from 'antd'
 import { InboxOutlined } from '@ant-design/icons'
-import dayjs from 'dayjs'
+import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase } from '@/lib/supabaseClient'
 import type { StaffUser, Loan } from '@/lib/types'
 
@@ -240,7 +240,7 @@ export default function EditLoanPage() {
               />
             </Form.Item>
             <Form.Item name="birth_date" label="วันเดือนปีเกิดผู้กู้" className={formItemClass}>
-              <DatePicker className="w-full !rounded-lg" format="DD/MM/YYYY" size="large" placeholder="เลือกวันที่" />
+              <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
             </Form.Item>
           </div>
         </section>
@@ -260,7 +260,7 @@ export default function EditLoanPage() {
               <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
             </Form.Item>
             <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
-              <DatePicker className="w-full !rounded-lg" format="DD/MM/YYYY" size="large" placeholder="เลือกวันที่" />
+              <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
             </Form.Item>
             <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: true }]} className={formItemClassFull}>
               <Input size="large" placeholder="กรอกเลขทะเบียน" className="!rounded-lg w-full" />
@@ -277,7 +277,7 @@ export default function EditLoanPage() {
           </div>
           <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
             <Form.Item name="submission_date" label="วันที่เสนอสินเชื่อ" rules={[{ required: true }]} className={formItemClass}>
-              <DatePicker className="w-full !rounded-lg" format="DD/MM/YYYY" size="large" placeholder="เลือกวันที่" />
+              <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
             </Form.Item>
             <Form.Item
               name="loan_amount"

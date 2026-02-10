@@ -35,7 +35,13 @@ export function formatDate(value: string | null | undefined): string {
   if (value == null || !value) return '—'
   try {
     const d = new Date(value)
-    return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString('th-TH')
+    if (Number.isNaN(d.getTime())) return value
+    return d.toLocaleDateString('th-TH', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      calendar: 'buddhist',
+    })
   } catch {
     return value
   }
