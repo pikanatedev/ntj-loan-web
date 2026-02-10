@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Truck Loan Application (Next.js + Supabase)
 
-## Getting Started
+โปรเจกต์นี้คือเว็บแอปพลิเคชันสำหรับบริหารจัดการการเสนอเคสสินเชื่อรถบรรทุก โดยเน้นการใช้งานที่ง่าย รวดเร็ว และรองรับการทำงานแยกส่วนระหว่าง **พนักงานขาย (Sale)** และ **ผู้อนุมัติ (Approver)**
 
-First, run the development server:
+## 🛠 Tech Stack
+- **Frontend:** Next.js 14+ (App Router)
+- **Styling:** Tailwind CSS (Theme: Red & Yellow)
+- **Backend/Database:** Supabase (PostgreSQL)
+- **File Storage:** Supabase Storage (Bucket: `loan-docs`)
+- **Authentication:** Custom PIN-based login (6 digits)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📊 Database Schema
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+ระบบใช้ฐานข้อมูล PostgreSQL บน Supabase ประกอบด้วย 3 ตารางหลักดังนี้:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. ตาราง `staff` (ข้อมูลพนักงาน)
+ใช้สำหรับระบุตัวตนและสิทธิ์การใช้งาน
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | uuid | Primary Key (auto-generated) |
+| `name` | text | ชื่อ-นามสกุลพนักงาน |
+| `pin` | varchar(6) | รหัสผ่าน 6 หลัก (Unique) |
+| `role` | text | สิทธิ์การใช้งาน ('sale' หรือ 'approver') |
 
-## Learn More
+### 2. ตาราง `loans` (ข้อมูลคำขอสินเชื่อ)
+เก็บรายละเอียดทั้งหมดของรถและผู้กู้
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | uuid | Primary Key |
+| `submission_date` | date | วันที่เสนอเคส |
+| `sale_id` | uuid | Foreign Key อ้างอิงพนักงานที่สร้างเคส |
+| `sales_name` | text | ชื่อพนักงานขาย (Redundant เพื่อความเร็วในการแสดงผล) |
+| `car_brand` | text | ยี่ห้อรถ |
+| `car_model` | text | รุ่นรถ |
+| `car_type` | text | ลักษณะรถ (เช่น 10 ล้อ, หัวลาก) |
+| `registration_date` | date | วันที่จดทะเบียนรถ |
+| `car_details` | text | รายละเอียด/ตำหนิของรถ |
+| `license_plate` | text | เลขทะเบียนรถ |
+| `loan_amount` | numeric | ยอดจัดที่ขอ |
+| `closing_amount` | numeric | ยอดปิดบัญชีเดิม (ถ้ามี) |
+| `term_months` | integer | จำนวนงวดที่ขอ |
+| `interest_rate` | numeric | อัตราดอกเบี้ย |
+| `customer_name` | text | ชื่อ-นามสกุลผู้กู้ |
+| `id_card_number` | text | เลขบัตรประชาชนผู้กู้ |
+| `birth_date` | date | วันเดือนปีเกิดผู้กู้ |
+| `status` | text | สถานะ ('รอตรวจสอบ', 'อนุมัติ', 'ปฏิเสธ') |
+| `approver_comment` | text | ความเห็นจากผู้อนุมัติ |
+| `approver_name` | text | ชื่อผู้ที่กดอนุมัติเคส |
+| `created_at` | timestamptz | วันเวลาที่สร้าง Record |
 
-To learn more about Next.js, take a look at the following resources:
+### 3. ตาราง `loan_attachments` (ไฟล์แนบ)
+เก็บ Link อ้างอิงไฟล์เอกสาร (One-to-Many Relationship)
+| Column | Type | Description |
+| :--- | :--- | :--- |
+| `id` | uuid | Primary Key |
+| `loan_id` | uuid | Foreign Key อ้างอิงถึง ID ในตาราง loans |
+| `file_path` | text | ที่อยู่ไฟล์ใน Supabase Storage |
+| `file_name` | text | ชื่อไฟล์ต้นฉบับ |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🎨 UI Design System (Tailwind Classes)
+- **Background:** `bg-yellow-50` หรือ `#FEF9C3` (เหลืองอ่อนสบายตา)
+- **Header/Primary Button:** `bg-red-700` หรือ `#A52A2A` (แดงเข้มตามแบรนด์)
+- **Card:** `bg-white` พร้อม `shadow-lg`
+- **Text:** `text-gray-900` สำหรับเนื้อหาทั่วไป และ `text-red-700` สำหรับหัวข้อสำคัญ
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🚀 Key Workflows
+1. **Authentication:** - User กรอก PIN 6 หลัก 
+   - ระบบเช็คในตาราง `staff` ว่า PIN ตรงกับใคร และมีสิทธิ์ (`role`) อะไร
+   - เก็บสถานะ Login ไว้ใน `localStorage`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Sale Workflow:** - เข้าหน้าแบบฟอร์ม กรอกข้อมูลรถและผู้กู้ครบทุก Field 
+   - เลือกไฟล์เอกสาร (หลายไฟล์) 
+   - ระบบอัปโหลดไฟล์ไปที่ Storage โฟลเดอร์ `loans/[ID]/...`
+   - บันทึกข้อมูลลงตาราง `loans` และ `loan_attachments`
+
+3. **Approver Workflow:**
+   - เห็นรายการเคสทั้งหมดที่ `status = 'รอตรวจสอบ'`
+   - สามารถกดดูรูปภาพเอกสารและรายละเอียดได้
+   - กดปุ่ม "อนุมัติ" เพื่อเปลี่ยนสถานะและใส่ความเห็นเพิ่มเติม
