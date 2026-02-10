@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Modal, Input, message, Spin } from 'antd'
+import { FilePdfOutlined, FileOutlined } from '@ant-design/icons'
 import { supabase } from '@/lib/supabaseClient'
 import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
 import { formatNum, formatDate } from '@/lib/types'
@@ -263,29 +264,59 @@ export default function LoanDetailPage() {
           {attachments.length === 0 ? (
             <p className="text-gray-500 text-sm">ไม่มีไฟล์แนบ</p>
           ) : (
-            <ul className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
               {attachments.map((att) => {
                 const url = fileUrls[att.file_path]
+                const isImg = isImage(att.file_name)
+                const isPdfFile = isPdf(att.file_name)
+                const openPreview = () => {
+                  if (url) {
+                    setPreviewFile({ url, fileName: att.file_name })
+                    setPreviewLoading(true)
+                  }
+                }
                 return (
-                  <li key={att.id}>
-                    {url ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                        setPreviewFile({ url, fileName: att.file_name })
-                        setPreviewLoading(true)
-                      }}
-                        className="text-red-700 hover:underline py-2 inline-block min-h-[44px] flex items-center break-all text-left w-full"
-                      >
-                        {att.file_name} (เปิดดู)
-                      </button>
+                  <button
+                    key={att.id}
+                    type="button"
+                    onClick={openPreview}
+                    disabled={!url}
+                    className="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden text-left hover:border-red-300 hover:bg-red-50/30 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none"
+                  >
+                    {!url ? (
+                      <div className="aspect-square flex flex-col items-center justify-center text-gray-400 p-3">
+                        <Spin size="small" />
+                        <span className="text-xs mt-2">กำลังโหลด...</span>
+                      </div>
+                    ) : isImg ? (
+                      <div className="aspect-square bg-gray-100">
+                        <img
+                          src={url}
+                          alt={att.file_name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     ) : (
-                      <span className="text-gray-500 py-2 inline-block">{att.file_name} (กำลังโหลดลิงก์…)</span>
+                      <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
+                        {isPdfFile ? (
+                          <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
+                        ) : (
+                          <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />
+                        )}
+                        <span className="text-xs mt-2 truncate w-full text-center" title={att.file_name}>
+                          {isPdfFile ? 'PDF' : att.file_name}
+                        </span>
+                      </div>
                     )}
-                  </li>
+                    {url && (
+                      <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
+                        {att.file_name}
+                      </p>
+                    )}
+                  </button>
                 )
               })}
-            </ul>
+            </div>
           )}
         </div>
       </div>
