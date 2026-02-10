@@ -53,13 +53,18 @@ export function Header() {
           <span className="font-bold text-red-700 text-base sm:text-lg truncate">ระบบอนุมัติสินเชื่อ</span>
         </Link>
         {user != null && (
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="bg-red-700 text-white hover:bg-red-800 shrink-0 py-2 px-4 rounded-lg text-sm sm:text-base touch-manipulation font-medium"
-          >
-            ออกจากระบบ
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <span className="text-gray-700 text-sm sm:text-base truncate max-w-[120px] sm:max-w-[180px]" title={user.name}>
+              {user.name}
+            </span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="bg-red-700 text-white hover:bg-red-800 py-2 px-4 rounded-lg text-sm sm:text-base touch-manipulation font-medium"
+            >
+              ออกจากระบบ
+            </button>
+          </div>
         )}
       </div>
     </header>

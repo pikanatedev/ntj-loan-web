@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Modal, Input, message } from 'antd'
+import { Modal, Input, message, Spin } from 'antd'
 import { supabase } from '@/lib/supabaseClient'
 import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
 import { formatNum, formatDate } from '@/lib/types'
@@ -19,6 +19,7 @@ export default function LoanDetailPage() {
   const [modalLoading, setModalLoading] = useState(false)
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({})
   const [previewFile, setPreviewFile] = useState<{ url: string; fileName: string } | null>(null)
+  const [previewLoading, setPreviewLoading] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('loan_user')
@@ -80,7 +81,7 @@ export default function LoanDetailPage() {
         message.error(error.message || 'อัปเดตสถานะไม่สำเร็จ')
         return
       }
-      message.success(commentModal === 'approve' ? 'อนุมัติเคสเรียบร้อย' : 'บันทึกการปฏิเสธเรียบร้อย')
+      message.success(commentModal === 'approve' ? 'อนุมัติสินเชื่อเรียบร้อย' : 'บันทึกการปฏิเสธเรียบร้อย')
       setCommentModal(null)
       window.location.href = '/'
     } finally {
@@ -107,6 +108,12 @@ export default function LoanDetailPage() {
     loadUrls()
   }, [loan?.id, loan?.loan_attachments])
 
+  useEffect(() => {
+    if (previewFile && !isImage(previewFile.fileName) && !isPdf(previewFile.fileName)) {
+      setPreviewLoading(false)
+    }
+  }, [previewFile])
+
   const isImage = (name: string) => /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)
   const isPdf = (name: string) => /\.pdf$/i.test(name)
 
@@ -130,8 +137,11 @@ export default function LoanDetailPage() {
     return (
       <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-[#FBE437]">
         <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้</p>
-        <Link href="/" className="text-red-700 hover:underline mt-2 inline-block py-2 touch-manipulation">
-          ← กลับหน้ารายการ
+        <Link
+          href="/"
+          className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium touch-manipulation"
+        >
+          กลับ
         </Link>
       </div>
     )
@@ -141,8 +151,11 @@ export default function LoanDetailPage() {
     return (
       <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-[#FBE437]">
         <p className="text-gray-500 text-sm sm:text-base">ไม่มีสิทธิ์ดูรายการนี้</p>
-        <Link href="/" className="text-red-700 hover:underline mt-2 inline-block py-2 touch-manipulation">
-          ← กลับหน้ารายการ
+        <Link
+          href="/"
+          className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium touch-manipulation"
+        >
+          กลับ
         </Link>
       </div>
     )
@@ -150,14 +163,28 @@ export default function LoanDetailPage() {
 
   const attachments = (loan.loan_attachments ?? []) as LoanAttachment[]
   const canApprove = user.role === 'approver' && loan.status === 'รอตรวจสอบ'
+  const canEdit = user.role === 'sale' && loan.status === 'รอตรวจสอบ' && loan.sale_id === user.id
 
   return (
     <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437] pb-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-red-700">รายละเอียดเคส</h1>
-        <Link href="/" className="text-red-700 hover:underline py-2 -my-2 touch-manipulation">
-          ← กลับหน้ารายการ
-        </Link>
+        <h1 className="text-xl sm:text-2xl font-bold text-red-700">รายละเอียดสินเชื่อ</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          {canEdit && (
+            <Link
+              href={`/loan/${id}/edit`}
+              className="bg-amber-600 text-white px-4 py-3 sm:py-2 rounded-lg hover:bg-amber-700 text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
+            >
+              แก้ไข
+            </Link>
+          )}
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+          >
+            กลับ
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -194,7 +221,7 @@ export default function LoanDetailPage() {
         <div className="p-4 sm:p-6 border-b border-gray-200">
           <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลสินเชื่อ</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-gray-500">วันที่เสนอเคส</dt>
+            <dt className="text-gray-500">วันที่เสนอสินเชื่อ</dt>
             <dd className="text-gray-900">{formatDate(loan.submission_date)}</dd>
             <dt className="text-gray-500">พนักงานขาย</dt>
             <dd className="text-gray-900">{loan.sales_name ?? '—'}</dd>
@@ -244,7 +271,10 @@ export default function LoanDetailPage() {
                     {url ? (
                       <button
                         type="button"
-                        onClick={() => setPreviewFile({ url, fileName: att.file_name })}
+                        onClick={() => {
+                        setPreviewFile({ url, fileName: att.file_name })
+                        setPreviewLoading(true)
+                      }}
                         className="text-red-700 hover:underline py-2 inline-block min-h-[44px] flex items-center break-all text-left w-full"
                       >
                         {att.file_name} (เปิดดู)
@@ -280,7 +310,7 @@ export default function LoanDetailPage() {
       )}
 
       <Modal
-        title={commentModal === 'approve' ? 'อนุมัติเคส' : 'ปฏิเสธเคส'}
+        title={commentModal === 'approve' ? 'อนุมัติสินเชื่อ' : 'ปฏิเสธสินเชื่อ'}
         open={commentModal != null}
         onOk={submitCommentModal}
         onCancel={() => setCommentModal(null)}
@@ -310,7 +340,10 @@ export default function LoanDetailPage() {
       <Modal
         title={previewFile?.fileName ?? 'พรีวิวเอกสาร'}
         open={previewFile != null}
-        onCancel={() => setPreviewFile(null)}
+        onCancel={() => {
+          setPreviewFile(null)
+          setPreviewLoading(false)
+        }}
         footer={previewFile ? (
           <a
             href={previewFile.url}
@@ -327,33 +360,49 @@ export default function LoanDetailPage() {
         destroyOnClose
       >
         {previewFile && (
-          <div key={previewFile.url} className="flex justify-center bg-gray-100 rounded-lg min-h-[200px]">
+          <div
+            key={previewFile.url}
+            className="relative bg-gray-100 rounded-lg flex items-center justify-center"
+            style={{ minHeight: '70vh' }}
+          >
+            {previewLoading && (
+              <div
+                className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-lg z-10"
+                style={{ minHeight: '70vh' }}
+              >
+                <Spin size="large" />
+              </div>
+            )}
             {isImage(previewFile.fileName) ? (
               <img
                 key={previewFile.url}
                 src={previewFile.url}
                 alt={previewFile.fileName}
-                className="max-w-full max-h-[70vh] w-auto h-auto object-contain"
+                className={`max-w-full max-h-[70vh] w-auto h-auto object-contain ${previewLoading ? 'invisible absolute' : ''}`}
+                onLoad={() => setPreviewLoading(false)}
+                onError={() => setPreviewLoading(false)}
               />
             ) : isPdf(previewFile.fileName) ? (
               <iframe
                 key={previewFile.url}
                 src={previewFile.url}
                 title={previewFile.fileName}
-                className="w-full min-h-[70vh] border-0 rounded"
+                className={`w-full border-0 rounded ${previewLoading ? 'invisible absolute' : ''}`}
+                style={{ minHeight: '70vh' }}
+                onLoad={() => setPreviewLoading(false)}
               />
             ) : (
               <div className="p-6 text-center text-gray-600">
-                <p className="mb-4">ไม่สามารถพรีวิวไฟล์นี้ในหน้าต่างได้</p>
-                <a
-                  href={previewFile.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-red-700 hover:underline"
-                >
-                  เปิดในแท็บใหม่
-                </a>
-              </div>
+                  <p className="mb-4">ไม่สามารถพรีวิวไฟล์นี้ในหน้าต่างได้</p>
+                  <a
+                    href={previewFile.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-red-700 hover:underline"
+                  >
+                    เปิดในแท็บใหม่
+                  </a>
+                </div>
             )}
           </div>
         )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Prompt } from "next/font/google";
 import { AntdProvider } from "./components/AntdProvider";
 import { Header } from "./components/Header";
+import { ScrollToTop } from "./components/ScrollToTop";
 import "./globals.css";
 
 const prompt = Prompt({
@@ -12,7 +13,7 @@ const prompt = Prompt({
 
 export const metadata: Metadata = {
   title: "ระบบอนุมัติสินเชื่อ",
-  description: "บริหารจัดการการเสนอเคสสินเชื่อรถบรรทุก",
+  description: "บริหารจัดการการเสนอสินเชื่อรถบรรทุก",
   icons: {
     icon: [
       { url: "/images/favicon_io/favicon.ico", sizes: "any" },
@@ -40,6 +41,7 @@ export default function RootLayout({
     <html lang="th">
       <body className={`${prompt.variable} font-sans antialiased`}>
         <AntdProvider>
+          <ScrollToTop />
           <Header />
           {children}
         </AntdProvider>

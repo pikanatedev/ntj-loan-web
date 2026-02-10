@@ -1,17 +1,56 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { message } from 'antd'
+import { message, Input, Select, Pagination, DatePicker, Button } from 'antd'
+import type { Dayjs } from 'dayjs'
 import { supabase } from '@/lib/supabaseClient'
 import type { StaffUser, Loan } from '@/lib/types'
-import { formatNum } from '@/lib/types'
+import { formatNum, formatDate } from '@/lib/types'
+
+const { RangePicker } = DatePicker
+
+const PAGE_SIZE = 10
+const STATUS_OPTIONS = [
+  { value: '', label: 'ทุกสถานะ' },
+  { value: 'รอตรวจสอบ', label: 'รอตรวจสอบ' },
+  { value: 'อนุมัติ', label: 'อนุมัติ' },
+  { value: 'ปฏิเสธ', label: 'ปฏิเสธ' },
+]
+
+function matchKeyword(loan: Loan, keyword: string): boolean {
+  if (!keyword.trim()) return true
+  const k = keyword.trim().toLowerCase()
+  const fields = [
+    loan.customer_name,
+    loan.license_plate,
+    loan.car_brand,
+    loan.car_model,
+    loan.car_type,
+    loan.sales_name,
+    loan.id_card_number,
+  ]
+  return fields.some((f) => (f ?? '').toString().toLowerCase().includes(k))
+}
+
+function matchDateRange(submissionDate: string | null | undefined, range: [Dayjs | null, Dayjs | null] | null): boolean {
+  if (!range || (!range[0] && !range[1])) return true
+  const d = submissionDate ? submissionDate.slice(0, 10) : ''
+  if (!d) return false
+  if (range[0] && d < range[0].format('YYYY-MM-DD')) return false
+  if (range[1] && d > range[1].format('YYYY-MM-DD')) return false
+  return true
+}
 
 export default function ListPage() {
   const [user, setUser] = useState<StaffUser | null>(null)
   const [pin, setPin] = useState('')
   const [loans, setLoans] = useState<Loan[]>([])
   const [mounted, setMounted] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('')
+  const [submissionDateRange, setSubmissionDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
 
   const fetchData = async (currentUser: StaffUser) => {
     let query = supabase
@@ -24,6 +63,21 @@ export default function ListPage() {
     const { data } = await query
     setLoans(data || [])
   }
+
+  const filteredLoans = useMemo(() => {
+    return loans.filter((loan) => {
+      if (!matchKeyword(loan, keyword)) return false
+      if (statusFilter && loan.status !== statusFilter) return false
+      if (!matchDateRange(loan.submission_date, submissionDateRange)) return false
+      return true
+    })
+  }, [loans, keyword, statusFilter, submissionDateRange])
+
+  const totalFiltered = filteredLoans.length
+  const paginatedLoans = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return filteredLoans.slice(start, start + PAGE_SIZE)
+  }, [filteredLoans, currentPage])
 
   useEffect(() => {
     let cancelled = false
@@ -116,13 +170,81 @@ export default function ListPage() {
       </div>
 
       <div className="space-y-3 sm:space-y-4">
-        <h2 className="font-bold text-base sm:text-lg text-red-700">รายการเคสทั้งหมด</h2>
+        <h2 className="font-bold text-base sm:text-lg text-red-700">รายการสินเชื่อทั้งหมด</h2>
+
+        <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 sm:p-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">ค้นหา</label>
+              <Input.Search
+                placeholder="ชื่อ, ทะเบียน, ยี่ห้อ, รุ่น, พนักงานขาย, เลขบัตร..."
+                value={keyword}
+                onChange={(e) => {
+                  setKeyword(e.target.value)
+                  setCurrentPage(1)
+                }}
+                allowClear
+                className="w-full"
+                size="large"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">สถานะ</label>
+              <Select
+                placeholder="ทุกสถานะ"
+                value={statusFilter || undefined}
+                onChange={(v) => {
+                  setStatusFilter(v ?? '')
+                  setCurrentPage(1)
+                }}
+                options={STATUS_OPTIONS}
+                allowClear
+                className="w-full"
+                size="large"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่เสนอสินเชื่อ</label>
+              <RangePicker
+                value={submissionDateRange}
+                onChange={(dates) => {
+                  setSubmissionDateRange(dates ?? null)
+                  setCurrentPage(1)
+                }}
+                className="w-full [&_.ant-picker-input>input]:!rounded-lg"
+                size="large"
+                format="DD/MM/YYYY"
+                placeholder={['เริ่มต้น', 'สิ้นสุด']}
+              />
+            </div>
+          </div>
+          <div className="mt-4 pt-4 border-t border-gray-100 flex justify-end">
+            <Button
+              type="default"
+              onClick={() => {
+                setKeyword('')
+                setStatusFilter('')
+                setSubmissionDateRange(null)
+                setCurrentPage(1)
+              }}
+              className="!rounded-lg"
+            >
+              ล้างตัวกรอง
+            </Button>
+          </div>
+        </div>
+
         {loans.length === 0 ? (
           <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg text-center text-gray-500 text-sm sm:text-base">
-            ยังไม่มีรายการเคส
+            ยังไม่มีรายการสินเชื่อ
+          </div>
+        ) : filteredLoans.length === 0 ? (
+          <div className="bg-white p-6 sm:p-8 rounded-xl shadow-lg text-center text-gray-500 text-sm sm:text-base">
+            ไม่พบรายการที่ตรงกับตัวกรอง
           </div>
         ) : (
-          loans.map((loan) => (
+          <>
+            {paginatedLoans.map((loan) => (
             <div
               key={loan.id}
               className="bg-white p-4 rounded-xl shadow-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
@@ -130,6 +252,14 @@ export default function ListPage() {
               <div className="text-gray-900 min-w-0">
                 <p className="font-bold text-base truncate">{loan.customer_name ?? '—'} ({loan.license_plate ?? '—'})</p>
                 <p className="text-sm text-gray-500 mt-0.5 break-words">
+                  {user.role === 'approver' && (
+                    <>
+                      พนักงานขาย: {loan.sales_name ?? '—'}
+                      {' · '}
+                    </>
+                  )}
+                  วันที่เสนอสินเชื่อ: {formatDate(loan.submission_date)}
+                  {' · '}
                   ยอดจัด: {formatNum(loan.loan_amount)}
                   {loan.closing_amount != null && ` | ปิดบัญชี: ${formatNum(loan.closing_amount)}`} | สถานะ:{' '}
                   <span
@@ -148,7 +278,19 @@ export default function ListPage() {
                 ดูรายละเอียด
               </Link>
             </div>
-          ))
+            ))}
+            <div className="flex justify-center pt-4">
+              <Pagination
+                current={currentPage}
+                total={totalFiltered}
+                pageSize={PAGE_SIZE}
+                onChange={setCurrentPage}
+                showSizeChanger={false}
+                showTotal={(total) => `ทั้งหมด ${total} รายการ`}
+                className="[&_.ant-pagination-item]:!rounded [&_.ant-pagination-prev]:!rounded [&_.ant-pagination-next]:!rounded"
+              />
+            </div>
+          </>
         )}
       </div>
     </div>

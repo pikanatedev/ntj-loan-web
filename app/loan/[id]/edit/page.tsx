@@ -1,18 +1,22 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Form, Input, InputNumber, DatePicker, Upload, Button, message } from 'antd'
 import type { UploadFile } from 'antd'
-import { InboxOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
+import { InboxOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { supabase } from '@/lib/supabaseClient'
-import type { StaffUser } from '@/lib/types'
+import type { StaffUser, Loan } from '@/lib/types'
 
-export default function NewLoanPage() {
+export default function EditLoanPage() {
+  const params = useParams()
   const router = useRouter()
+  const id = params.id as string
   const [user, setUser] = useState<StaffUser | null>(null)
+  const [loan, setLoan] = useState<Loan | null>(null)
+  const [loading, setLoading] = useState(true)
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -35,54 +39,85 @@ export default function NewLoanPage() {
     }
   }, [router])
 
+  useEffect(() => {
+    if (!id || !user) return
+    const fetchLoan = async () => {
+      const { data, error } = await supabase.from('loans').select('*').eq('id', id).single()
+      if (error || !data) {
+        setLoan(null)
+        setLoading(false)
+        return
+      }
+      const row = data as Loan
+      if (row.status !== 'รอตรวจสอบ' || row.sale_id !== user.id) {
+        setLoan(null)
+        setLoading(false)
+        return
+      }
+      setLoan(row)
+      form.setFieldsValue({
+        customer_name: row.customer_name ?? undefined,
+        id_card_number: row.id_card_number ?? undefined,
+        birth_date: row.birth_date ? dayjs(row.birth_date) : undefined,
+        car_brand: row.car_brand ?? undefined,
+        car_model: row.car_model ?? undefined,
+        car_type: row.car_type ?? undefined,
+        registration_date: row.registration_date ? dayjs(row.registration_date) : undefined,
+        license_plate: row.license_plate ?? undefined,
+        car_details: row.car_details ?? undefined,
+        submission_date: row.submission_date ? dayjs(row.submission_date) : dayjs(),
+        loan_amount: row.loan_amount ?? undefined,
+        closing_amount: row.closing_amount ?? undefined,
+        term_months: row.term_months ?? undefined,
+        interest_rate: row.interest_rate ?? undefined,
+      })
+      setLoading(false)
+    }
+    fetchLoan()
+  }, [id, user, form])
+
   const onFinish = async (values: Record<string, unknown>) => {
-    if (!user) return
+    if (!user || !id) return
     setSubmitting(true)
     const toStr = (v: unknown) => (v != null && v !== '' ? String(v) : null)
     const toNum = (v: unknown) => (v != null && v !== '' ? Number(v) : null)
     const toDate = (v: unknown) => (v ? dayjs(v as dayjs.Dayjs).format('YYYY-MM-DD') : null)
 
     try {
-      const { data: loan, error } = await supabase
+      const { error } = await supabase
         .from('loans')
-        .insert([
-          {
-            submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
-            sale_id: user.id,
-            sales_name: user.name,
-            customer_name: toStr(values.customer_name),
-            id_card_number: toStr(values.id_card_number),
-            birth_date: toDate(values.birth_date),
-            car_brand: toStr(values.car_brand),
-            car_model: toStr(values.car_model),
-            car_type: toStr(values.car_type),
-            registration_date: toDate(values.registration_date),
-            license_plate: toStr(values.license_plate),
-            car_details: toStr(values.car_details),
-            loan_amount: toNum(values.loan_amount),
-            closing_amount: toNum(values.closing_amount),
-            term_months: toNum(values.term_months),
-            interest_rate: toNum(values.interest_rate),
-            status: 'รอตรวจสอบ',
-          },
-        ])
-        .select()
-        .single()
+        .update({
+          submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
+          customer_name: toStr(values.customer_name),
+          id_card_number: toStr(values.id_card_number),
+          birth_date: toDate(values.birth_date),
+          car_brand: toStr(values.car_brand),
+          car_model: toStr(values.car_model),
+          car_type: toStr(values.car_type),
+          registration_date: toDate(values.registration_date),
+          license_plate: toStr(values.license_plate),
+          car_details: toStr(values.car_details),
+          loan_amount: toNum(values.loan_amount),
+          closing_amount: toNum(values.closing_amount),
+          term_months: toNum(values.term_months),
+          interest_rate: toNum(values.interest_rate),
+        })
+        .eq('id', id)
 
       if (error) throw error
 
       const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
       const files = rawFiles as File[]
       for (const file of files) {
-        const path = `loans/${loan.id}/${Date.now()}_${file.name}`
+        const path = `loans/${id}/${Date.now()}_${file.name}`
         await supabase.storage.from('loan-docs').upload(path, file)
         await supabase
           .from('loan_attachments')
-          .insert([{ loan_id: loan.id, file_path: path, file_name: file.name }])
+          .insert([{ loan_id: id, file_path: path, file_name: file.name }])
       }
 
-      message.success('ส่งสินเชื่อสำเร็จ!')
-      router.push('/')
+      message.success('บันทึกการแก้ไขเรียบร้อย')
+      router.push(`/loan/${id}`)
     } catch {
       message.error('เกิดข้อผิดพลาด กรุณาลองใหม่')
     } finally {
@@ -92,43 +127,6 @@ export default function NewLoanPage() {
 
   const normFile = (e: { fileList: UploadFile[] }) => {
     setFileList(e.fileList)
-  }
-
-  const isImageFile = (file: UploadFile) => {
-    const f = file.originFileObj as File | undefined
-    if (!f) return false
-    if (f.type?.startsWith('image/')) return true
-    const ext = (file.name ?? '').toLowerCase().split('.').pop()
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext ?? '')
-  }
-
-  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({})
-  const thumbUrlsRef = useRef<Record<string, string>>({})
-
-  useEffect(() => {
-    const uids = new Set(fileList.map((f) => f.uid))
-    const next: Record<string, string> = {}
-    fileList.forEach((file) => {
-      if (!isImageFile(file) || !file.originFileObj) return
-      const url = thumbUrlsRef.current[file.uid] ?? URL.createObjectURL(file.originFileObj)
-      next[file.uid] = url
-    })
-    Object.keys(thumbUrlsRef.current).forEach((uid) => {
-      if (!uids.has(uid)) URL.revokeObjectURL(thumbUrlsRef.current[uid])
-    })
-    thumbUrlsRef.current = next
-    setThumbUrls(next)
-  }, [fileList])
-
-  useEffect(() => {
-    return () => {
-      Object.values(thumbUrlsRef.current).forEach(URL.revokeObjectURL)
-      thumbUrlsRef.current = {}
-    }
-  }, [])
-
-  const removeFile = (uid: string) => {
-    setFileList((prev) => prev.filter((f) => f.uid !== uid))
   }
 
   const idCardRules = [
@@ -169,10 +167,24 @@ export default function NewLoanPage() {
     else if (!/^[\d.]$/.test(e.key)) e.preventDefault()
   }
 
-  if (user == null) {
+  if (user == null || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
         <p className="text-gray-500">กำลังโหลด...</p>
+      </div>
+    )
+  }
+
+  if (!loan) {
+    return (
+      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-[#FBE437]">
+        <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
+        <Link
+          href="/"
+          className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium touch-manipulation"
+        >
+          กลับหน้ารายการ
+        </Link>
       </div>
     )
   }
@@ -184,29 +196,31 @@ export default function NewLoanPage() {
     </div>
   )
 
-  const formItemClass = "w-full min-w-0 mb-4 [&_.ant-form-item-label]:!pt-0 [&_.ant-form-item-label>label]:!text-gray-700 [&_.ant-form-item-label>label]:!font-medium [&_.ant-form-item-control]:!w-full [&_.ant-input]:min-h-[44px] [&_.ant-input]:!rounded-lg [&_.ant-input]:w-full [&_.ant-picker]:min-h-[44px] [&_.ant-picker]:!rounded-lg [&_.ant-picker]:w-full [&_.ant-input-number]:!flex [&_.ant-input-number]:!w-full [&_.ant-input-number]:!max-w-full [&_.ant-input-number-input]:!min-h-[44px] [&_.ant-input-number-input]:!flex-1 [&_.ant-input-number-input]:!min-w-0 [&_.ant-input-number-input]:!rounded-lg"
-  const formItemClassFull = formItemClass + " md:col-span-2"
+  const formItemClass =
+    'w-full min-w-0 mb-4 [&_.ant-form-item-label]:!pt-0 [&_.ant-form-item-label>label]:!text-gray-700 [&_.ant-form-item-label>label]:!font-medium [&_.ant-form-item-control]:!w-full [&_.ant-input]:min-h-[44px] [&_.ant-input]:!rounded-lg [&_.ant-input]:w-full [&_.ant-picker]:min-h-[44px] [&_.ant-picker]:!rounded-lg [&_.ant-picker]:w-full [&_.ant-input-number]:!flex [&_.ant-input-number]:!w-full [&_.ant-input-number]:!max-w-full [&_.ant-input-number-input]:!min-h-[44px] [&_.ant-input-number-input]:!flex-1 [&_.ant-input-number-input]:!min-w-0 [&_.ant-input-number-input]:!rounded-lg'
+  const formItemClassFull = formItemClass + ' md:col-span-2'
 
   return (
     <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-red-700">แบบฟอร์มเสนอสินเชื่อใหม่</h1>
-        <Link
-          href="/"
-          className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
-        >
-          กลับหน้ารายการ
-        </Link>
+        <h1 className="text-xl sm:text-2xl font-bold text-red-700">แก้ไขข้อมูลสินเชื่อ</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href={`/loan/${id}`}
+            className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+          >
+            กลับรายละเอียด
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+          >
+            หน้ารายการ
+          </Link>
+        </div>
       </div>
 
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        className="space-y-6 sm:space-y-8"
-        initialValues={{ submission_date: dayjs() }}
-      >
-        {/* ข้อมูลผู้กู้ */}
+      <Form form={form} layout="vertical" onFinish={onFinish} className="space-y-6 sm:space-y-8">
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
             {sectionTitle('ข้อมูลผู้กู้')}
@@ -231,7 +245,6 @@ export default function NewLoanPage() {
           </div>
         </section>
 
-        {/* ข้อมูลรถ */}
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
             {sectionTitle('ข้อมูลรถ')}
@@ -258,7 +271,6 @@ export default function NewLoanPage() {
           </div>
         </section>
 
-        {/* ข้อมูลสินเชื่อ */}
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
             {sectionTitle('ข้อมูลสินเชื่อ')}
@@ -352,14 +364,13 @@ export default function NewLoanPage() {
           </div>
         </section>
 
-        {/* แนบเอกสาร */}
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('แนบเอกสาร')}
+            {sectionTitle('แนบเอกสารเพิ่ม (ถ้ามี)')}
           </div>
           <div className="p-4 sm:p-6">
             <Form.Item
-              label={<span className="text-gray-700 font-medium">เลือกไฟล์ (ทีละไฟล์หรือหลายไฟล์)</span>}
+              label={<span className="text-gray-700 font-medium">เลือกไฟล์เพิ่ม (เอกสารเดิมยังอยู่)</span>}
               className="mb-0"
             >
               <Upload.Dragger
@@ -368,62 +379,14 @@ export default function NewLoanPage() {
                 onChange={normFile}
                 beforeUpload={() => false}
                 maxCount={999}
-                showUploadList={false}
                 className="!rounded-xl !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-gray-50/50 hover:!bg-red-50/30 [&.ant-upload-drag]:!rounded-xl"
               >
                 <p className="ant-upload-drag-icon mb-2">
                   <InboxOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
                 </p>
                 <p className="ant-upload-text text-gray-700 font-medium">คลิกหรือลากไฟล์มาวางที่นี่</p>
-                <p className="ant-upload-hint text-gray-500 text-sm mt-1">รายการไฟล์จะแสดงด้านล่าง (รูปแสดงเป็น thumbnail)</p>
+                <p className="ant-upload-hint text-gray-500 text-sm mt-1">รายการไฟล์จะแสดงด้านล่างหลังเลือก</p>
               </Upload.Dragger>
-            {fileList.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 font-medium mb-3">ไฟล์ที่แนบแล้ว ({fileList.length})</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {fileList.map((file) => {
-                    const isImg = isImageFile(file)
-                    const thumbUrl = isImg ? thumbUrls[file.uid] : null
-                    return (
-                      <div
-                        key={file.uid}
-                        className="relative rounded-xl border border-gray-200 bg-gray-50 overflow-hidden group"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => removeFile(file.uid)}
-                          className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
-                          aria-label="ลบไฟล์"
-                        >
-                          <CloseOutlined className="!text-xs" />
-                        </button>
-                        {thumbUrl ? (
-                          <div className="aspect-square bg-gray-100">
-                            <img
-                              src={thumbUrl}
-                              alt={file.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="aspect-square flex flex-col items-center justify-center text-gray-400 p-2">
-                            <FileOutlined style={{ fontSize: 28 }} />
-                            <span className="text-xs mt-1 truncate w-full text-center" title={file.name}>
-                              {file.name}
-                            </span>
-                          </div>
-                        )}
-                        {isImg && (
-                          <p className="text-xs text-gray-500 truncate px-2 py-1.5" title={file.name}>
-                            {file.name}
-                          </p>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
             </Form.Item>
           </div>
         </section>
@@ -435,9 +398,9 @@ export default function NewLoanPage() {
             size="large"
             block
             loading={submitting}
-            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20"
+            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20 !bg-amber-600 hover:!bg-amber-700 !border-amber-600"
           >
-            {submitting ? 'กำลังส่ง...' : 'ส่งข้อมูลให้ผู้อนุมัติ'}
+            {submitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
           </Button>
         </div>
       </Form>
