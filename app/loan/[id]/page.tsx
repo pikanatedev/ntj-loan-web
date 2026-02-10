@@ -68,7 +68,7 @@ export default function LoanDetailPage() {
     if (!user || !commentModal) return
     setModalLoading(true)
     try {
-      await supabase
+      const { error } = await supabase
         .from('loans')
         .update({
           status: commentModal === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ',
@@ -76,10 +76,13 @@ export default function LoanDetailPage() {
           approver_comment: comment?.trim() || null,
         })
         .eq('id', id)
+      if (error) {
+        message.error(error.message || 'อัปเดตสถานะไม่สำเร็จ')
+        return
+      }
       message.success(commentModal === 'approve' ? 'อนุมัติเคสเรียบร้อย' : 'บันทึกการปฏิเสธเรียบร้อย')
       setCommentModal(null)
-      router.push('/')
-      router.refresh()
+      window.location.href = '/'
     } finally {
       setModalLoading(false)
     }

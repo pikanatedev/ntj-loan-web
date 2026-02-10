@@ -8,17 +8,10 @@ import type { StaffUser, Loan } from '@/lib/types'
 import { formatNum } from '@/lib/types'
 
 export default function ListPage() {
-  const [user, setUser] = useState<StaffUser | null>(() => {
-    if (typeof window === 'undefined') return null
-    try {
-      const s = localStorage.getItem('loan_user')
-      return s ? (JSON.parse(s) as StaffUser) : null
-    } catch {
-      return null
-    }
-  })
+  const [user, setUser] = useState<StaffUser | null>(null)
   const [pin, setPin] = useState('')
   const [loans, setLoans] = useState<Loan[]>([])
+  const [mounted, setMounted] = useState(false)
 
   const fetchData = async (currentUser: StaffUser) => {
     let query = supabase
@@ -33,10 +26,26 @@ export default function ListPage() {
   }
 
   useEffect(() => {
-    if (!user) return
-    const tid = setTimeout(() => fetchData(user), 0)
-    return () => clearTimeout(tid)
-  }, [user])
+    let cancelled = false
+    const timer = setTimeout(() => {
+      try {
+        const s = localStorage.getItem('loan_user')
+        if (cancelled) return
+        if (s) {
+          const parsed = JSON.parse(s) as StaffUser
+          setUser(parsed)
+          fetchData(parsed)
+        }
+      } catch {
+        if (!cancelled) setUser(null)
+      }
+      if (!cancelled) setMounted(true)
+    }, 0)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [])
 
   const handleLogin = async () => {
     const { data } = await supabase.from('staff').select('*').eq('pin', pin).single()
@@ -48,6 +57,14 @@ export default function ListPage() {
     } else {
       message.error('PIN ไม่ถูกต้อง')
     }
+  }
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
+        <span className="text-gray-500">กำลังโหลด...</span>
+      </div>
+    )
   }
 
   if (!user) {
