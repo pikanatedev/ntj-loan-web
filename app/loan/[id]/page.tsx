@@ -109,7 +109,7 @@ export default function LoanDetailPage() {
 
   if (user == null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-yellow-50">
+      <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
         <p className="text-gray-500">กำลังโหลด...</p>
       </div>
     )
@@ -117,7 +117,7 @@ export default function LoanDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-yellow-50">
+      <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
         <p className="text-gray-500">กำลังโหลด...</p>
       </div>
     )
@@ -125,7 +125,7 @@ export default function LoanDetailPage() {
 
   if (!loan) {
     return (
-      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-yellow-50">
+      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-[#FBE437]">
         <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้</p>
         <Link href="/" className="text-red-700 hover:underline mt-2 inline-block py-2 touch-manipulation">
           ← กลับหน้ารายการ
@@ -136,7 +136,7 @@ export default function LoanDetailPage() {
 
   if (user.role === 'sale' && loan.sale_id !== user.id) {
     return (
-      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-yellow-50">
+      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-[#FBE437]">
         <p className="text-gray-500 text-sm sm:text-base">ไม่มีสิทธิ์ดูรายการนี้</p>
         <Link href="/" className="text-red-700 hover:underline mt-2 inline-block py-2 touch-manipulation">
           ← กลับหน้ารายการ
@@ -149,7 +149,7 @@ export default function LoanDetailPage() {
   const canApprove = user.role === 'approver' && loan.status === 'รอตรวจสอบ'
 
   return (
-    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-yellow-50 pb-6">
+    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437] pb-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-red-700">รายละเอียดเคส</h1>
         <Link href="/" className="text-red-700 hover:underline py-2 -my-2 touch-manipulation">
@@ -284,7 +284,10 @@ export default function LoanDetailPage() {
         confirmLoading={modalLoading}
         okText={commentModal === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}
         cancelText="ยกเลิก"
-        okButtonProps={commentModal === 'reject' ? { danger: true } : undefined}
+        okButtonProps={{
+          danger: commentModal === 'reject',
+          className: '!bg-red-700 hover:!bg-red-800 !border-red-700',
+        }}
         width="min(100vw - 2rem, 480px)"
         centered
       >

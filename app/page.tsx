@@ -52,7 +52,7 @@ export default function ListPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-52px)] sm:min-h-screen bg-yellow-50 px-4 py-6">
+      <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437] px-4 py-6">
         <div className="p-6 sm:p-8 bg-white shadow-lg rounded-xl max-w-sm w-full text-center">
           <Image
             src="/images/ntj_logo.png"
@@ -83,7 +83,7 @@ export default function ListPage() {
   }
 
   return (
-    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-yellow-50">
+    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
         <h1 className="text-xl sm:text-2xl font-bold text-red-700 leading-tight">
           ระบบอนุมัติสินเชื่อ ({user.role === 'sale' ? 'พนักงานขาย' : 'ผู้อนุมัติ'})

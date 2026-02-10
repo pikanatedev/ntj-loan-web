@@ -96,7 +96,7 @@ export default function NewLoanPage() {
 
   if (user == null) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-yellow-50">
+      <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
         <p className="text-gray-500">กำลังโหลด...</p>
       </div>
     )
@@ -113,7 +113,7 @@ export default function NewLoanPage() {
   const formItemClassFull = formItemClass + " md:col-span-2"
 
   return (
-    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-yellow-50">
+    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-red-700">แบบฟอร์มส่งเคสใหม่</h1>
         <Link href="/" className="text-red-700 hover:underline py-2 -my-2 text-sm sm:text-base touch-manipulation">

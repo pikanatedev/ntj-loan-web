@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Modal } from 'antd'
 import type { StaffUser } from '@/lib/types'
 
 export function Header() {
@@ -25,8 +26,17 @@ export function Header() {
   }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem('loan_user')
-    window.location.href = '/'
+    Modal.confirm({
+      title: 'ออกจากระบบ',
+      content: 'ต้องการออกจากระบบจริงหรือไม่?',
+      okText: 'ออกจากระบบ',
+      cancelText: 'ยกเลิก',
+      okButtonProps: { danger: true, className: '!bg-red-700 hover:!bg-red-800 !border-red-700' },
+      onOk() {
+        localStorage.removeItem('loan_user')
+        window.location.href = '/'
+      },
+    })
   }
 
   return (
@@ -46,7 +56,7 @@ export function Header() {
           <button
             type="button"
             onClick={handleLogout}
-            className="text-red-700 hover:underline shrink-0 py-2 px-3 -my-2 -mr-2 text-sm sm:text-base touch-manipulation"
+            className="bg-red-700 text-white hover:bg-red-800 shrink-0 py-2 px-4 rounded-lg text-sm sm:text-base touch-manipulation font-medium"
           >
             ออกจากระบบ
           </button>

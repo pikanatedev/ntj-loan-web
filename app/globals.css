@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FEF9C3; /* yellow-50 - เหลืองอ่อนสบายตา */
+  --background: #FBE437; /* เหลืองอ่อนสบายตา */
   --foreground: #111827; /* gray-900 */
   --primary: #B91C1C; /* red-700 - แดงเข้มตามแบรนด์ */
 }
