@@ -5,6 +5,7 @@ export type LoanAttachment = { id: string; loan_id: string; file_path: string; f
 export type Loan = {
   id: string
   sale_id?: string | null
+  loan_reference_number?: string | null
   submission_date?: string | null
   customer_name?: string | null
   license_plate?: string | null

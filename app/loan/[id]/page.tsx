@@ -190,6 +190,14 @@ export default function LoanDetailPage() {
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="p-4 sm:p-6 border-b border-gray-200">
+          <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">เลขที่อ้างอิงสินเชื่อ</h2>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <dt className="text-gray-500">เลขที่อ้างอิงสินเชื่อ</dt>
+            <dd className="text-gray-900">{loan.loan_reference_number ?? '—'}</dd>
+          </dl>
+        </div>
+
+        <div className="p-4 sm:p-6 border-b border-gray-200">
           <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-gray-500">ชื่อ-นามสกุล</dt>

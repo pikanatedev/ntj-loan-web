@@ -60,6 +60,7 @@ export default function EditLoanPage() {
       }
       setLoan(row)
       form.setFieldsValue({
+        loan_reference_number: row.loan_reference_number ?? undefined,
         customer_name: row.customer_name ?? undefined,
         id_card_number: row.id_card_number ?? undefined,
         birth_date: row.birth_date ? dayjs(row.birth_date) : undefined,
@@ -152,6 +153,7 @@ export default function EditLoanPage() {
         .from('loans')
         .update({
           submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
+          loan_reference_number: toStr(values.loan_reference_number),
           customer_name: toStr(values.customer_name),
           id_card_number: toStr(values.id_card_number),
           birth_date: toDate(values.birth_date),
@@ -301,6 +303,17 @@ export default function EditLoanPage() {
       </div>
 
       <Form form={form} layout="vertical" onFinish={onFinish} className="space-y-6 sm:space-y-8">
+        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+            {sectionTitle('เลขที่อ้างอิงสินเชื่อ')}
+          </div>
+          <div className="p-4 sm:p-6">
+            <Form.Item name="loan_reference_number" label="เลขที่อ้างอิงสินเชื่อ" className={formItemClass}>
+              <Input size="large" placeholder="กรอกเลขที่อ้างอิง (ไม่บังคับ)" className="!rounded-lg w-full" />
+            </Form.Item>
+          </div>
+        </section>
+
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
             {sectionTitle('ข้อมูลผู้กู้')}
