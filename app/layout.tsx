@@ -14,7 +14,7 @@ const prompt = Prompt({
 
 export const metadata: Metadata = {
   title: "ระบบอนุมัติสินเชื่อ",
-  description: "บริหารจัดการการเสนอสินเชื่อรถบรรทุก",
+  description: "บริหารจัดการการเสนอสินเชื่อรถเบื้องต้น",
   icons: {
     icon: [
       { url: "/images/favicon_io/favicon.ico", sizes: "any" },

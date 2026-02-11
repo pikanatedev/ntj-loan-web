@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Form, Input, InputNumber, DatePicker, Upload, Button, message } from 'antd'
 import type { UploadFile } from 'antd'
-import { InboxOutlined } from '@ant-design/icons'
+import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase } from '@/lib/supabaseClient'
-import type { StaffUser, Loan } from '@/lib/types'
+import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
 
 export default function EditLoanPage() {
   const params = useParams()
@@ -20,6 +20,10 @@ export default function EditLoanPage() {
   const [form] = Form.useForm()
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [idsToRemove, setIdsToRemove] = useState<string[]>([])
+  const [existingFileUrls, setExistingFileUrls] = useState<Record<string, string>>({})
+  const [newFileThumbUrls, setNewFileThumbUrls] = useState<Record<string, string>>({})
+  const newFileThumbUrlsRef = useRef<Record<string, string>>({})
 
   useEffect(() => {
     const stored = localStorage.getItem('loan_user')
@@ -42,7 +46,7 @@ export default function EditLoanPage() {
   useEffect(() => {
     if (!id || !user) return
     const fetchLoan = async () => {
-      const { data, error } = await supabase.from('loans').select('*').eq('id', id).single()
+      const { data, error } = await supabase.from('loans').select('*, loan_attachments(*)').eq('id', id).single()
       if (error || !data) {
         setLoan(null)
         setLoading(false)
@@ -76,6 +80,66 @@ export default function EditLoanPage() {
     fetchLoan()
   }, [id, user, form])
 
+  useEffect(() => {
+    const attachments = (loan?.loan_attachments ?? []) as LoanAttachment[]
+    if (!attachments.length) return
+    const loadUrls = async () => {
+      const map: Record<string, string> = {}
+      for (const att of attachments) {
+        const { data: urlData } = await supabase.storage.from('loan-docs').createSignedUrl(att.file_path, 3600)
+        if (urlData?.signedUrl) map[att.file_path] = urlData.signedUrl
+      }
+      setExistingFileUrls((prev) => ({ ...prev, ...map }))
+    }
+    loadUrls()
+  }, [loan?.id, loan?.loan_attachments])
+
+  const existingAttachments = useMemo(() => {
+    const list = (loan?.loan_attachments ?? []) as LoanAttachment[]
+    return list.filter((a) => !idsToRemove.includes(a.id))
+  }, [loan?.loan_attachments, idsToRemove])
+
+  const isImage = (name: string) => /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)
+  const isPdf = (name: string) => /\.pdf$/i.test(name)
+
+  const removeExistingAttachment = (attachmentId: string) => {
+    setIdsToRemove((prev) => (prev.includes(attachmentId) ? prev : [...prev, attachmentId]))
+  }
+
+  const isImageNewFile = (file: UploadFile) => {
+    const f = file.originFileObj as File | undefined
+    if (!f) return false
+    if (f.type?.startsWith('image/')) return true
+    const ext = (file.name ?? '').toLowerCase().split('.').pop()
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext ?? '')
+  }
+
+  useEffect(() => {
+    const uids = new Set(fileList.map((f) => f.uid))
+    const next: Record<string, string> = {}
+    fileList.forEach((file) => {
+      if (!isImageNewFile(file) || !file.originFileObj) return
+      const url = newFileThumbUrlsRef.current[file.uid] ?? URL.createObjectURL(file.originFileObj)
+      next[file.uid] = url
+    })
+    Object.keys(newFileThumbUrlsRef.current).forEach((uid) => {
+      if (!uids.has(uid)) URL.revokeObjectURL(newFileThumbUrlsRef.current[uid])
+    })
+    newFileThumbUrlsRef.current = next
+    setNewFileThumbUrls(next)
+  }, [fileList])
+
+  useEffect(() => {
+    return () => {
+      Object.values(newFileThumbUrlsRef.current).forEach(URL.revokeObjectURL)
+      newFileThumbUrlsRef.current = {}
+    }
+  }, [])
+
+  const removeNewFile = (uid: string) => {
+    setFileList((prev) => prev.filter((f) => f.uid !== uid))
+  }
+
   const onFinish = async (values: Record<string, unknown>) => {
     if (!user || !id) return
     setSubmitting(true)
@@ -105,6 +169,22 @@ export default function EditLoanPage() {
         .eq('id', id)
 
       if (error) throw error
+
+      const attachmentsToRemove = ((loan?.loan_attachments ?? []) as LoanAttachment[]).filter((a) =>
+        idsToRemove.includes(a.id)
+      )
+      for (const att of attachmentsToRemove) {
+        const { error: delError } = await supabase.from('loan_attachments').delete().eq('id', att.id).eq('loan_id', id)
+        if (delError) {
+          console.error('Delete attachment error:', delError)
+          throw delError
+        }
+        const { error: storageError } = await supabase.storage.from('loan-docs').remove([att.file_path])
+        if (storageError) {
+          console.error('Delete storage error:', storageError)
+          // ไม่ throw เพื่อให้การลบแถวใน DB ยังถือว่าสำเร็จ ไฟล์ใน storage อาจต้องลบทีหลัง
+        }
+      }
 
       const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
       const files = rawFiles as File[]
@@ -366,28 +446,153 @@ export default function EditLoanPage() {
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('แนบเอกสารเพิ่ม (ถ้ามี)')}
+            {sectionTitle('เอกสารแนบ')}
           </div>
-          <div className="p-4 sm:p-6">
-            <Form.Item
-              label={<span className="text-gray-700 font-medium">เลือกไฟล์เพิ่ม (เอกสารเดิมยังอยู่)</span>}
-              className="mb-0"
-            >
-              <Upload.Dragger
-                multiple
-                fileList={fileList}
-                onChange={normFile}
-                beforeUpload={() => false}
-                maxCount={999}
-                className="!rounded-xl !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-gray-50/50 hover:!bg-red-50/30 [&.ant-upload-drag]:!rounded-xl"
+          <div className="p-4 sm:p-6 space-y-6">
+            {existingAttachments.length > 0 && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">เอกสารที่มีอยู่ (กด X เพื่อลบออกจากเคส)</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {existingAttachments.map((att) => {
+                    const thumbUrl = existingFileUrls[att.file_path]
+                    const isImg = isImage(att.file_name)
+                    const isPdfFile = isPdf(att.file_name)
+                    return (
+                      <div
+                        key={att.id}
+                        className="relative rounded-xl border border-gray-200 bg-gray-50 overflow-hidden group"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => removeExistingAttachment(att.id)}
+                          className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
+                          aria-label="ลบไฟล์"
+                        >
+                          <CloseOutlined className="!text-xs" />
+                        </button>
+                        {isImg && thumbUrl ? (
+                          <>
+                            <div className="aspect-square bg-gray-100">
+                              <img
+                                src={thumbUrl}
+                                alt={att.file_name}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
+                              {att.file_name}
+                            </p>
+                          </>
+                        ) : isImg && !thumbUrl ? (
+                          <>
+                            <div className="aspect-square bg-gray-100 flex items-center justify-center">
+                              <span className="text-gray-400 text-xs">โหลด...</span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
+                              {att.file_name}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
+                              {isPdfFile ? (
+                                <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
+                              ) : (
+                                <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />
+                              )}
+                              <span className="text-xs mt-2 truncate w-full text-center" title={att.file_name}>
+                                {isPdfFile ? 'PDF' : att.file_name}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
+                              {att.file_name}
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            <div>
+              <Form.Item
+                label={<span className="text-gray-700 font-medium">เพิ่มไฟล์ใหม่ (ถ้ามี)</span>}
+                className="mb-0"
               >
-                <p className="ant-upload-drag-icon mb-2">
-                  <InboxOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
-                </p>
-                <p className="ant-upload-text text-gray-700 font-medium">คลิกหรือลากไฟล์มาวางที่นี่</p>
-                <p className="ant-upload-hint text-gray-500 text-sm mt-1">รายการไฟล์จะแสดงด้านล่างหลังเลือก</p>
-              </Upload.Dragger>
-            </Form.Item>
+                <Upload.Dragger
+                  multiple
+                  fileList={fileList}
+                  onChange={normFile}
+                  beforeUpload={() => false}
+                  maxCount={999}
+                  showUploadList={false}
+                  className="!rounded-xl !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-gray-50/50 hover:!bg-red-50/30 [&.ant-upload-drag]:!rounded-xl"
+                >
+                  <p className="ant-upload-drag-icon mb-2">
+                    <InboxOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
+                  </p>
+                  <p className="ant-upload-text text-gray-700 font-medium">คลิกหรือลากไฟล์มาวางที่นี่</p>
+                  <p className="ant-upload-hint text-gray-500 text-sm mt-1">รายการไฟล์จะแสดงด้านล่าง (รูปแสดงเป็น thumbnail)</p>
+                </Upload.Dragger>
+              </Form.Item>
+              {fileList.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-3">ไฟล์ใหม่ที่เลือก ({fileList.length})</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {fileList.map((file) => {
+                      const isImg = isImageNewFile(file)
+                      const thumbUrl = isImg ? newFileThumbUrls[file.uid] : null
+                      return (
+                        <div
+                          key={file.uid}
+                          className="relative rounded-xl border border-gray-200 bg-gray-50 overflow-hidden group"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => removeNewFile(file.uid)}
+                            className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
+                            aria-label="ลบไฟล์"
+                          >
+                            <CloseOutlined className="!text-xs" />
+                          </button>
+                          {thumbUrl ? (
+                            <>
+                              <div className="aspect-square bg-gray-100">
+                                <img
+                                  src={thumbUrl}
+                                  alt={file.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={file.name}>
+                                {file.name}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
+                                {isPdf(file.name ?? '') ? (
+                                  <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
+                                ) : (
+                                  <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />
+                                )}
+                                <span className="text-xs mt-2 truncate w-full text-center" title={file.name}>
+                                  {isPdf(file.name ?? '') ? 'PDF' : file.name}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={file.name}>
+                                {file.name}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
