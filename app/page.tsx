@@ -159,7 +159,7 @@ export default function ListPage() {
     <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
         <h1 className="text-xl sm:text-2xl font-bold text-red-700 leading-tight">
-          ระบบอนุมัติสินเชื่อ ({user.role === 'sale' ? 'พนักงานขาย' : user.role === 'manager' ? 'ผู้จัดการ' : 'ผู้อนุมัติ'})
+          ระบบอนุมัติสินเชื่อ ({user.role === 'sale' ? 'พนักงานขาย' : user.role?.toLowerCase() === 'manager' ? 'ผู้จัดการ' : 'ผู้อนุมัติ'})
         </h1>
         {user.role === 'sale' && (
           <Link
@@ -254,7 +254,7 @@ export default function ListPage() {
               <div className="text-gray-900 min-w-0">
                 <p className="font-bold text-base truncate">{loan.customer_name ?? '—'} ({loan.license_plate ?? '—'})</p>
                 <p className="text-sm text-gray-500 mt-0.5 break-words">
-                  {(user.role === 'approver' || user.role === 'manager') && (
+                  {(user.role === 'approver' || user.role?.toLowerCase() === 'manager') && (
                     <>
                       พนักงานขาย: {loan.sales_name ?? '—'}
                       {' · '}
