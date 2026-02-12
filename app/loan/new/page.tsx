@@ -7,7 +7,8 @@ import { Form, Input, InputNumber, DatePicker, Upload, Button, message } from 'a
 import type { UploadFile } from 'antd'
 import { InboxOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
+import { getSafeStoragePath } from '@/lib/storage'
 import type { StaffUser } from '@/lib/types'
 
 export default function NewLoanPage() {
@@ -75,17 +76,23 @@ export default function NewLoanPage() {
       const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
       const files = rawFiles as File[]
       for (const file of files) {
-        const path = `loans/${loan.id}/${Date.now()}_${file.name}`
-        await supabase.storage.from('loan-docs').upload(path, file)
-        await supabase
+        const path = getSafeStoragePath(loan.id, file)
+        const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file)
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          throw new Error(uploadError.message === 'Bucket not found' ? 'ไม่พบ Storage bucket กรุณาสร้าง bucket ใน Supabase Dashboard' : uploadError.message)
+        }
+        const { error: insertError } = await supabase
           .from('loan_attachments')
           .insert([{ loan_id: loan.id, file_path: path, file_name: file.name }])
+        if (insertError) throw insertError
       }
 
       message.success('ส่งสินเชื่อสำเร็จ!')
       router.push('/')
-    } catch {
-      message.error('เกิดข้อผิดพลาด กรุณาลองใหม่')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+      message.error(msg)
     } finally {
       setSubmitting(false)
     }

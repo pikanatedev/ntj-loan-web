@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Modal, Input, message, Spin } from 'antd'
 import { FilePdfOutlined, FileOutlined } from '@ant-design/icons'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
 import { formatNum, formatDate } from '@/lib/types'
 
@@ -96,13 +96,9 @@ export default function LoanDetailPage() {
     const loadUrls = async () => {
       const map: Record<string, string> = {}
       for (const att of attachments) {
-        const { data } = await supabase.storage.from('loan-docs').createSignedUrl(att.file_path, 3600)
-        if (data?.signedUrl) {
-          map[att.file_path] = data.signedUrl
-        } else {
-          const { data: pub } = supabase.storage.from('loan-docs').getPublicUrl(att.file_path)
-          map[att.file_path] = pub?.publicUrl ?? '#'
-        }
+        const { data } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(att.file_path, 3600)
+        if (data?.signedUrl) map[att.file_path] = data.signedUrl
+        // ไม่ใช้ getPublicUrl เป็น fallback เพราะ bucket ส่วนใหญ่เป็น private จะได้ 404 "Bucket not found"
       }
       setFileUrls((prev) => ({ ...prev, ...map }))
     }

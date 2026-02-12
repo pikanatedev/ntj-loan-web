@@ -7,7 +7,8 @@ import { Form, Input, InputNumber, DatePicker, Upload, Button, message } from 'a
 import type { UploadFile } from 'antd'
 import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
-import { supabase } from '@/lib/supabaseClient'
+import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
+import { getSafeStoragePath } from '@/lib/storage'
 import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
 
 export default function EditLoanPage() {
@@ -87,7 +88,7 @@ export default function EditLoanPage() {
     const loadUrls = async () => {
       const map: Record<string, string> = {}
       for (const att of attachments) {
-        const { data: urlData } = await supabase.storage.from('loan-docs').createSignedUrl(att.file_path, 3600)
+        const { data: urlData } = await supabase.storage.from(STORAGE_BUCKET).createSignedUrl(att.file_path, 3600)
         if (urlData?.signedUrl) map[att.file_path] = urlData.signedUrl
       }
       setExistingFileUrls((prev) => ({ ...prev, ...map }))
@@ -181,7 +182,7 @@ export default function EditLoanPage() {
           console.error('Delete attachment error:', delError)
           throw delError
         }
-        const { error: storageError } = await supabase.storage.from('loan-docs').remove([att.file_path])
+        const { error: storageError } = await supabase.storage.from(STORAGE_BUCKET).remove([att.file_path])
         if (storageError) {
           console.error('Delete storage error:', storageError)
           // ไม่ throw เพื่อให้การลบแถวใน DB ยังถือว่าสำเร็จ ไฟล์ใน storage อาจต้องลบทีหลัง
@@ -191,17 +192,23 @@ export default function EditLoanPage() {
       const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
       const files = rawFiles as File[]
       for (const file of files) {
-        const path = `loans/${id}/${Date.now()}_${file.name}`
-        await supabase.storage.from('loan-docs').upload(path, file)
-        await supabase
+        const path = getSafeStoragePath(id, file)
+        const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file)
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError)
+          throw new Error(uploadError.message === 'Bucket not found' ? 'ไม่พบ Storage bucket กรุณาสร้าง bucket ใน Supabase Dashboard' : uploadError.message)
+        }
+        const { error: insertError } = await supabase
           .from('loan_attachments')
           .insert([{ loan_id: id, file_path: path, file_name: file.name }])
+        if (insertError) throw insertError
       }
 
       message.success('บันทึกการแก้ไขเรียบร้อย')
       router.push(`/loan/${id}`)
-    } catch {
-      message.error('เกิดข้อผิดพลาด กรุณาลองใหม่')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่'
+      message.error(msg)
     } finally {
       setSubmitting(false)
     }
