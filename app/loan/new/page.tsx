@@ -9,6 +9,7 @@ import { InboxOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
+import { generateNextLoanReference } from '@/lib/loanReference'
 import type { StaffUser, LoanType } from '@/lib/types'
 
 export default function NewLoanPage() {
@@ -52,7 +53,6 @@ export default function NewLoanPage() {
         submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
         sale_id: user.id,
         sales_name: user.name,
-        loan_reference_number: toStr(values.loan_reference_number),
         customer_name: toStr(values.customer_name),
         id_card_number: toStr(values.id_card_number),
         birth_date: toDate(values.birth_date),
@@ -83,6 +83,13 @@ export default function NewLoanPage() {
         .single()
 
       if (error) throw error
+
+      const loanRef = await generateNextLoanReference(supabase)
+      const { error: updateRefError } = await supabase
+        .from('loans')
+        .update({ loan_reference_number: loanRef })
+        .eq('id', loan.id)
+      if (updateRefError) throw updateRefError
 
       const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
       const files = rawFiles as File[]
@@ -225,18 +232,6 @@ export default function NewLoanPage() {
         className="space-y-6 sm:space-y-8"
         initialValues={{ submission_date: dayjs(), loan_type: 'personal_car' }}
       >
-        {/* เลขที่อ้างอิงสินเชื่อ */}
-        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('เลขที่อ้างอิงสินเชื่อ')}
-          </div>
-          <div className="p-4 sm:p-6">
-            <Form.Item name="loan_reference_number" label="เลขที่อ้างอิงสินเชื่อ" className={formItemClass}>
-              <Input size="large" placeholder="กรอกเลขที่อ้างอิง (ไม่บังคับ)" className="!rounded-lg w-full" />
-            </Form.Item>
-          </div>
-        </section>
-
         {/* ข้อมูลผู้กู้ */}
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">

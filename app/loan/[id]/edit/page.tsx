@@ -339,7 +339,7 @@ export default function EditLoanPage() {
           </div>
           <div className="p-4 sm:p-6">
             <Form.Item name="loan_reference_number" label="เลขที่อ้างอิงสินเชื่อ" className={formItemClass}>
-              <Input size="large" placeholder="กรอกเลขที่อ้างอิง (ไม่บังคับ)" className="!rounded-lg w-full" />
+              <Input size="large" disabled placeholder="—" className="!rounded-lg w-full !bg-gray-50" />
             </Form.Item>
           </div>
         </section>
