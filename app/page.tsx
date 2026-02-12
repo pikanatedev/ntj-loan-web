@@ -19,9 +19,21 @@ const STATUS_OPTIONS = [
   { value: 'ปฏิเสธ', label: 'ปฏิเสธ' },
 ]
 
+const LOAN_TYPE_LABELS: Record<string, string> = {
+  personal_car: 'รถยนต์ส่วนบุคคล',
+  commercial_vehicle: 'รถยนต์เชิงพาณิชย์',
+  land_title: 'โฉนดที่ดิน',
+}
+
+function getLoanTypeLabel(loanType: string | null | undefined): string {
+  if (!loanType) return '—'
+  return LOAN_TYPE_LABELS[loanType] ?? loanType
+}
+
 function matchKeyword(loan: Loan, keyword: string): boolean {
   if (!keyword.trim()) return true
   const k = keyword.trim().toLowerCase()
+  const typeLabel = getLoanTypeLabel(loan.loan_type)
   const fields = [
     loan.customer_name,
     loan.license_plate,
@@ -30,6 +42,9 @@ function matchKeyword(loan: Loan, keyword: string): boolean {
     loan.car_type,
     loan.sales_name,
     loan.id_card_number,
+    typeLabel,
+    loan.residence_address,
+    loan.land_deed_no,
   ]
   return fields.some((f) => (f ?? '').toString().toLowerCase().includes(k))
 }
@@ -179,7 +194,7 @@ export default function ListPage() {
             <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">ค้นหา</label>
               <Input.Search
-                placeholder="ชื่อ, ทะเบียน, ยี่ห้อ, รุ่น, พนักงานขาย, เลขบัตร..."
+                placeholder="ชื่อ, ทะเบียน, ประเภท (โฉนด/รถ), ยี่ห้อ, พนักงานขาย..."
                 value={keyword}
                 onChange={(e) => {
                   setKeyword(e.target.value)
@@ -252,11 +267,24 @@ export default function ListPage() {
               className="bg-white p-4 rounded-xl shadow-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
             >
               <div className="text-gray-900 min-w-0">
-                <p className="font-bold text-base truncate">{loan.customer_name ?? '—'} ({loan.license_plate ?? '—'})</p>
+                <p className="font-bold text-base truncate">
+                  {loan.customer_name ?? '—'}
+                  {loan.loan_type === 'land_title' ? (
+                    <span className="font-normal text-gray-600"> · {getLoanTypeLabel(loan.loan_type)}</span>
+                  ) : (
+                    <> ({loan.license_plate ?? '—'})</>
+                  )}
+                </p>
                 <p className="text-sm text-gray-500 mt-0.5 break-words">
                   {(user.role === 'approver' || user.role?.toLowerCase() === 'manager') && (
                     <>
                       พนักงานขาย: {loan.sales_name ?? '—'}
+                      {' · '}
+                    </>
+                  )}
+                  {loan.loan_type && (
+                    <>
+                      ประเภท: {getLoanTypeLabel(loan.loan_type)}
                       {' · '}
                     </>
                   )}

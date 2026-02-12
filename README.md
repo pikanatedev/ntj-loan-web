@@ -39,6 +39,10 @@
 | `registration_date` | date | วันที่จดทะเบียนรถ |
 | `car_details` | text | รายละเอียด/ตำหนิของรถ |
 | `license_plate` | text | เลขทะเบียนรถ |
+| `loan_type` | text | ประเภทสินเชื่อ: 'personal_car', 'commercial_vehicle', 'land_title' |
+| `residence_address` | text | ที่อยู่ (ใช้เมื่อ loan_type = โฉนดที่ดิน) |
+| `land_deed_no` | text | เลขที่โฉนดที่ดิน (ไม่บังคับ) |
+| `residence_details` | text | รายละเอียดที่อยู่อาศัยเพิ่มเติม |
 | `loan_amount` | numeric | ยอดจัดที่ขอ |
 | `closing_amount` | numeric | ยอดปิดบัญชีเดิม (ถ้ามี) |
 | `term_months` | integer | จำนวนงวดที่ขอ |

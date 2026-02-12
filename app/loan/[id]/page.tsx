@@ -162,6 +162,13 @@ export default function LoanDetailPage() {
   const canApprove = user.role === 'approver' && loan.status === 'รอตรวจสอบ'
   const canEdit = user.role === 'sale' && loan.status === 'รอตรวจสอบ' && loan.sale_id === user.id
 
+  const loanTypeLabels: Record<string, string> = {
+    personal_car: 'รถยนต์ส่วนบุคคล (รถยนต์นั่งไม่เกิน 7 ที่นั่ง)',
+    commercial_vehicle: 'รถยนต์เชิงพาณิชย์',
+    land_title: 'โฉนดที่ดิน',
+  }
+  const isLandTitle = loan.loan_type === 'land_title'
+
   return (
     <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437] pb-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4 sm:mb-6">
@@ -190,6 +197,12 @@ export default function LoanDetailPage() {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-gray-500">เลขที่อ้างอิงสินเชื่อ</dt>
             <dd className="text-gray-900">{loan.loan_reference_number ?? '—'}</dd>
+            {loan.loan_type && (
+              <>
+                <dt className="text-gray-500">ประเภทสินเชื่อ</dt>
+                <dd className="text-gray-900">{loanTypeLabels[loan.loan_type] ?? loan.loan_type}</dd>
+              </>
+            )}
           </dl>
         </div>
 
@@ -205,23 +218,37 @@ export default function LoanDetailPage() {
           </dl>
         </div>
 
-        <div className="p-4 sm:p-6 border-b border-gray-200">
-          <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลรถ</h2>
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-gray-500">ยี่ห้อ</dt>
-            <dd className="text-gray-900">{loan.car_brand ?? '—'}</dd>
-            <dt className="text-gray-500">รุ่น</dt>
-            <dd className="text-gray-900">{loan.car_model ?? '—'}</dd>
-            <dt className="text-gray-500">ลักษณะรถ</dt>
-            <dd className="text-gray-900">{loan.car_type ?? '—'}</dd>
-            <dt className="text-gray-500">วันที่จดทะเบียน</dt>
-            <dd className="text-gray-900">{formatDate(loan.registration_date)}</dd>
-            <dt className="text-gray-500">เลขทะเบียน</dt>
-            <dd className="text-gray-900">{loan.license_plate ?? '—'}</dd>
-            <dt className="text-gray-500">รายละเอียด/ตำหนิ</dt>
-            <dd className="text-gray-900 col-span-2">{loan.car_details ?? '—'}</dd>
-          </dl>
-        </div>
+        {isLandTitle ? (
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลที่อยู่อาศัย</h2>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <dt className="text-gray-500">ที่อยู่</dt>
+              <dd className="text-gray-900 col-span-2">{loan.residence_address ?? '—'}</dd>
+              <dt className="text-gray-500">เลขที่โฉนด</dt>
+              <dd className="text-gray-900">{loan.land_deed_no ?? '—'}</dd>
+              <dt className="text-gray-500">รายละเอียดเพิ่มเติม</dt>
+              <dd className="text-gray-900 col-span-2">{loan.residence_details ?? '—'}</dd>
+            </dl>
+          </div>
+        ) : (
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลรถ</h2>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <dt className="text-gray-500">ยี่ห้อ</dt>
+              <dd className="text-gray-900">{loan.car_brand ?? '—'}</dd>
+              <dt className="text-gray-500">รุ่น</dt>
+              <dd className="text-gray-900">{loan.car_model ?? '—'}</dd>
+              <dt className="text-gray-500">ลักษณะรถ</dt>
+              <dd className="text-gray-900">{loan.car_type ?? '—'}</dd>
+              <dt className="text-gray-500">วันที่จดทะเบียน</dt>
+              <dd className="text-gray-900">{formatDate(loan.registration_date)}</dd>
+              <dt className="text-gray-500">เลขทะเบียน</dt>
+              <dd className="text-gray-900">{loan.license_plate ?? '—'}</dd>
+              <dt className="text-gray-500">รายละเอียด/ตำหนิ</dt>
+              <dd className="text-gray-900 col-span-2">{loan.car_details ?? '—'}</dd>
+            </dl>
+          </div>
+        )}
 
         <div className="p-4 sm:p-6 border-b border-gray-200">
           <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลสินเชื่อ</h2>

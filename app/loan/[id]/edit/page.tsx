@@ -3,13 +3,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Form, Input, InputNumber, DatePicker, Upload, Button, message } from 'antd'
+import { Form, Input, InputNumber, DatePicker, Upload, Button, message, Select } from 'antd'
 import type { UploadFile } from 'antd'
 import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
-import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
+import type { StaffUser, Loan, LoanAttachment, LoanType } from '@/lib/types'
 
 export default function EditLoanPage() {
   const params = useParams()
@@ -65,12 +65,16 @@ export default function EditLoanPage() {
         customer_name: row.customer_name ?? undefined,
         id_card_number: row.id_card_number ?? undefined,
         birth_date: row.birth_date ? dayjs(row.birth_date) : undefined,
+        loan_type: (row.loan_type as LoanType) ?? 'personal_car',
         car_brand: row.car_brand ?? undefined,
         car_model: row.car_model ?? undefined,
         car_type: row.car_type ?? undefined,
         registration_date: row.registration_date ? dayjs(row.registration_date) : undefined,
         license_plate: row.license_plate ?? undefined,
         car_details: row.car_details ?? undefined,
+        residence_address: row.residence_address ?? undefined,
+        land_deed_no: row.land_deed_no ?? undefined,
+        residence_details: row.residence_details ?? undefined,
         submission_date: row.submission_date ? dayjs(row.submission_date) : dayjs(),
         loan_amount: row.loan_amount ?? undefined,
         closing_amount: row.closing_amount ?? undefined,
@@ -150,26 +154,41 @@ export default function EditLoanPage() {
     const toDate = (v: unknown) => (v ? dayjs(v as dayjs.Dayjs).format('YYYY-MM-DD') : null)
 
     try {
-      const { error } = await supabase
-        .from('loans')
-        .update({
-          submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
-          loan_reference_number: toStr(values.loan_reference_number),
-          customer_name: toStr(values.customer_name),
-          id_card_number: toStr(values.id_card_number),
-          birth_date: toDate(values.birth_date),
-          car_brand: toStr(values.car_brand),
-          car_model: toStr(values.car_model),
-          car_type: toStr(values.car_type),
-          registration_date: toDate(values.registration_date),
-          license_plate: toStr(values.license_plate),
-          car_details: toStr(values.car_details),
-          loan_amount: toNum(values.loan_amount),
-          closing_amount: toNum(values.closing_amount),
-          term_months: toNum(values.term_months),
-          interest_rate: toNum(values.interest_rate),
-        })
-        .eq('id', id)
+      const updatePayload: Record<string, unknown> = {
+        submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
+        loan_reference_number: toStr(values.loan_reference_number),
+        customer_name: toStr(values.customer_name),
+        id_card_number: toStr(values.id_card_number),
+        birth_date: toDate(values.birth_date),
+        loan_type: toStr(values.loan_type) || null,
+        loan_amount: toNum(values.loan_amount),
+        closing_amount: toNum(values.closing_amount),
+        term_months: toNum(values.term_months),
+        interest_rate: toNum(values.interest_rate),
+      }
+      if (values.loan_type === 'land_title') {
+        updatePayload.residence_address = toStr(values.residence_address)
+        updatePayload.land_deed_no = toStr(values.land_deed_no)
+        updatePayload.residence_details = toStr(values.residence_details)
+        updatePayload.car_brand = null
+        updatePayload.car_model = null
+        updatePayload.car_type = null
+        updatePayload.registration_date = null
+        updatePayload.license_plate = null
+        updatePayload.car_details = null
+      } else {
+        updatePayload.car_brand = toStr(values.car_brand)
+        updatePayload.car_model = toStr(values.car_model)
+        updatePayload.car_type = toStr(values.car_type)
+        updatePayload.registration_date = toDate(values.registration_date)
+        updatePayload.license_plate = toStr(values.license_plate)
+        updatePayload.car_details = toStr(values.car_details)
+        updatePayload.residence_address = null
+        updatePayload.land_deed_no = null
+        updatePayload.residence_details = null
+      }
+
+      const { error } = await supabase.from('loans').update(updatePayload).eq('id', id)
 
       if (error) throw error
 
@@ -289,6 +308,10 @@ export default function EditLoanPage() {
     'w-full min-w-0 mb-4 [&_.ant-form-item-label]:!pt-0 [&_.ant-form-item-label>label]:!text-gray-700 [&_.ant-form-item-label>label]:!font-medium [&_.ant-form-item-control]:!w-full [&_.ant-input]:min-h-[44px] [&_.ant-input]:!rounded-lg [&_.ant-input]:w-full [&_.ant-picker]:min-h-[44px] [&_.ant-picker]:!rounded-lg [&_.ant-picker]:w-full [&_.ant-input-number]:!flex [&_.ant-input-number]:!w-full [&_.ant-input-number]:!max-w-full [&_.ant-input-number-input]:!min-h-[44px] [&_.ant-input-number-input]:!flex-1 [&_.ant-input-number-input]:!min-w-0 [&_.ant-input-number-input]:!rounded-lg'
   const formItemClassFull = formItemClass + ' md:col-span-2'
 
+  const watchedLoanType = Form.useWatch<LoanType>('loan_type', form)
+  const loanType = watchedLoanType ?? 'personal_car'
+  const isLandTitle = loanType === 'land_title'
+
   return (
     <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
@@ -347,29 +370,75 @@ export default function EditLoanPage() {
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('ข้อมูลรถ')}
+            {sectionTitle('ประเภทสินเชื่อ')}
           </div>
-          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
-            <Form.Item name="car_brand" label="ยี่ห้อรถ" rules={[{ required: true }]} className={formItemClass}>
-              <Input size="large" placeholder="เช่น Toyota, Isuzu" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="car_model" label="รุ่นรถ" rules={[{ required: true }]} className={formItemClass}>
-              <Input size="large" placeholder="กรอกรุ่นรถ" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
-              <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
-              <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
-            </Form.Item>
-            <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: true }]} className={formItemClassFull}>
-              <Input size="large" placeholder="กรอกเลขทะเบียน" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="car_details" label="รายละเอียด/ตำหนิของรถ" className={formItemClassFull}>
-              <Input.TextArea rows={3} placeholder="ระบุรายละเอียดหรือตำหนิ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
+          <div className="p-4 sm:p-6">
+            <Form.Item
+              name="loan_type"
+              label="ประเภทของสินเชื่อ"
+              rules={[{ required: true, message: 'กรุณาเลือกประเภทสินเชื่อ' }]}
+              className={formItemClass}
+            >
+              <Select
+                size="large"
+                placeholder="เลือกประเภทสินเชื่อ"
+                className="!rounded-lg w-full"
+                options={[
+                  { value: 'personal_car', label: 'รถยนต์ส่วนบุคคล (รถยนต์นั่งไม่เกิน 7 ที่นั่ง)' },
+                  { value: 'commercial_vehicle', label: 'รถยนต์เชิงพาณิชย์' },
+                  { value: 'land_title', label: 'โฉนดที่ดิน' },
+                ]}
+              />
             </Form.Item>
           </div>
         </section>
+
+        {!isLandTitle && (
+          <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+            <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+              {sectionTitle('ข้อมูลรถ')}
+            </div>
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+              <Form.Item name="car_brand" label="ยี่ห้อรถ" rules={[{ required: true, message: 'กรุณากรอกยี่ห้อรถ' }]} className={formItemClass}>
+                <Input size="large" placeholder="เช่น Toyota, Isuzu" className="!rounded-lg w-full" />
+              </Form.Item>
+              <Form.Item name="car_model" label="รุ่นรถ" rules={[{ required: true, message: 'กรุณากรอกรุ่นรถ' }]} className={formItemClass}>
+                <Input size="large" placeholder="กรอกรุ่นรถ" className="!rounded-lg w-full" />
+              </Form.Item>
+              <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
+                <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
+              </Form.Item>
+              <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
+                <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
+              </Form.Item>
+              <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: true, message: 'กรุณากรอกเลขทะเบียน' }]} className={formItemClassFull}>
+                <Input size="large" placeholder="กรอกเลขทะเบียน" className="!rounded-lg w-full" />
+              </Form.Item>
+              <Form.Item name="car_details" label="รายละเอียด/ตำหนิของรถ" className={formItemClassFull}>
+                <Input.TextArea rows={3} placeholder="ระบุรายละเอียดหรือตำหนิ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
+              </Form.Item>
+            </div>
+          </section>
+        )}
+
+        {isLandTitle && (
+          <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+            <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+              {sectionTitle('ข้อมูลที่อยู่อาศัย')}
+            </div>
+            <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+              <Form.Item name="residence_address" label="ที่อยู่" rules={[{ required: true, message: 'กรุณากรอกที่อยู่' }]} className={formItemClassFull}>
+                <Input.TextArea rows={3} placeholder="กรอกที่อยู่ที่อยู่อาศัยตามโฉนดที่ดิน" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
+              </Form.Item>
+              <Form.Item name="land_deed_no" label="เลขที่โฉนด" className={formItemClass}>
+                <Input size="large" placeholder="เลขที่โฉนดที่ดิน (ไม่บังคับ)" className="!rounded-lg w-full" />
+              </Form.Item>
+              <Form.Item name="residence_details" label="รายละเอียดเพิ่มเติม" className={formItemClassFull}>
+                <Input.TextArea rows={3} placeholder="รายละเอียดอื่นๆ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
+              </Form.Item>
+            </div>
+          </section>
+        )}
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">

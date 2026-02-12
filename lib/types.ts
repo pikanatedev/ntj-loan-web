@@ -2,6 +2,9 @@ export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' | 
 
 export type LoanAttachment = { id: string; loan_id: string; file_path: string; file_name: string }
 
+/** ประเภทสินเชื่อ: รถยนต์ส่วนบุคคล | รถยนต์เชิงพาณิชย์ | โฉนดที่ดิน */
+export type LoanType = 'personal_car' | 'commercial_vehicle' | 'land_title'
+
 export type Loan = {
   id: string
   sale_id?: string | null
@@ -11,11 +14,17 @@ export type Loan = {
   license_plate?: string | null
   loan_amount?: number | null
   closing_amount?: number | null
+  /** ประเภทสินเชื่อ */
+  loan_type?: LoanType | string | null
   car_brand?: string | null
   car_model?: string | null
   car_type?: string | null
   registration_date?: string | null
   car_details?: string | null
+  /** ข้อมูลที่อยู่อาศัย (โฉนดที่ดิน) */
+  residence_address?: string | null
+  land_deed_no?: string | null
+  residence_details?: string | null
   term_months?: number | null
   interest_rate?: number | null
   id_card_number?: string | null
