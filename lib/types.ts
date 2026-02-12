@@ -1,4 +1,4 @@
-export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' }
+export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' | 'manager' }
 
 export type LoanAttachment = { id: string; loan_id: string; file_path: string; file_name: string }
 
