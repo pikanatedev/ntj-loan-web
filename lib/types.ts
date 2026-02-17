@@ -15,6 +15,74 @@ export type LoanApprovalHistoryEntry = {
 /** ประเภทสินเชื่อ: รถยนต์ส่วนบุคคล | รถยนต์เชิงพาณิชย์ | โฉนดที่ดิน */
 export type LoanType = 'personal_car' | 'commercial_vehicle' | 'land_title'
 
+/** ข้อมูลผู้กู้สินเชื่อ (แบบฟอร์มขยาย) — เก็บในคอลัมน์ borrower_info (jsonb) */
+export type BorrowerInfo = {
+  /** 1. ข้อมูลส่วนตัว */
+  id_card_expiry_date?: string | null
+  nationality?: string | null
+  age?: number | null
+  marital_status?: string | null
+  children_count?: number | null
+  company_history?: string | null
+  company_history_type?: string | null
+  education_level?: string | null
+  payer?: string | null
+  car_user?: string | null
+  car_user_name?: string | null
+  car_user_phone?: string | null
+  /** 2. ที่อยู่ปัจจุบัน */
+  address_no?: string | null
+  address_moo?: string | null
+  address_village?: string | null
+  address_soi?: string | null
+  address_road?: string | null
+  address_subdistrict?: string | null
+  address_district?: string | null
+  address_province?: string | null
+  address_postal_code?: string | null
+  address_type?: string | null
+  address_years?: number | null
+  ownership_type?: string | null
+  rent_amount?: number | null
+  /** 3. ช่องทางการติดต่อ */
+  phone_home?: string | null
+  phone_work?: string | null
+  phone_fax?: string | null
+  mobile_phone?: string | null
+  email?: string | null
+  line_id?: string | null
+  facebook?: string | null
+  instagram?: string | null
+  map_note?: string | null
+  /** 4. อาชีพและรายได้ */
+  occupation_type?: string | null
+  business_size?: string | null
+  business_type?: string | null
+  asset_value?: number | null
+  land_value?: number | null
+  employee_count?: number | null
+  workplace_name?: string | null
+  workplace_address?: string | null
+  position?: string | null
+  department?: string | null
+  income_salary?: number | null
+  income_commission?: number | null
+  income_other?: number | null
+  income_foreign_country?: string | null
+  income_foreign_amount?: number | null
+  payment_channel?: string | null
+  bank_name?: string | null
+  bank_account?: string | null
+  payment_other?: string | null
+  years_current_job?: number | null
+  years_total_job?: number | null
+  prev_workplace_name?: string | null
+  prev_position?: string | null
+  prev_department?: string | null
+  monthly_car_installment?: number | null
+  monthly_house_installment?: number | null
+}
+
 export type Loan = {
   id: string
   sale_id?: string | null
@@ -39,6 +107,8 @@ export type Loan = {
   interest_rate?: number | null
   id_card_number?: string | null
   birth_date?: string | null
+  /** ข้อมูลผู้กู้สินเชื่อแบบขยาย (แบบฟอร์ม 4 ส่วน) */
+  borrower_info?: BorrowerInfo | null
   status?: string | null
   approver_comment?: string | null
   approver_name?: string | null

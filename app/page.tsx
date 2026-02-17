@@ -13,7 +13,7 @@ const { RangePicker } = DatePicker
 
 const PAGE_SIZE = 10
 const STATUS_OPTIONS = [
-  { value: '', label: 'ทุกสถานะ' },
+  { value: '', label: 'เลือกสถานะ' },
   { value: 'รอตรวจสอบ', label: 'รอตรวจสอบ' },
   { value: 'ส่งกลับไปแก้ไข', label: 'ส่งกลับไปแก้ไข' },
   { value: 'อนุมัติ', label: 'อนุมัติ' },
@@ -209,7 +209,7 @@ export default function ListPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">สถานะ</label>
               <Select
-                placeholder="ทุกสถานะ"
+                placeholder="เลือกสถานะ"
                 value={statusFilter || undefined}
                 onChange={(v) => {
                   setStatusFilter(v ?? '')

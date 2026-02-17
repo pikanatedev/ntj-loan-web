@@ -3,13 +3,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Form, Input, InputNumber, DatePicker, Upload, Button, message, Select } from 'antd'
+import { Form, Input, InputNumber, DatePicker, Upload, Button, message, Select, Radio } from 'antd'
 import type { UploadFile } from 'antd'
 import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
-import type { StaffUser, Loan, LoanAttachment, LoanType } from '@/lib/types'
+import type { StaffUser, Loan, LoanAttachment, LoanType, BorrowerInfo } from '@/lib/types'
 
 export default function EditLoanPage() {
   const params = useParams()
@@ -63,11 +63,74 @@ export default function EditLoanPage() {
         return
       }
       setLoan(row)
+      const bo = row.borrower_info as BorrowerInfo | undefined
       form.setFieldsValue({
         loan_reference_number: row.loan_reference_number ?? undefined,
         customer_name: row.customer_name ?? undefined,
         id_card_number: row.id_card_number ?? undefined,
         birth_date: row.birth_date ? dayjs(row.birth_date) : undefined,
+        ...(bo && {
+          id_card_expiry_date: bo.id_card_expiry_date ? dayjs(bo.id_card_expiry_date) : undefined,
+          nationality: bo.nationality ?? undefined,
+          age: bo.age ?? undefined,
+          marital_status: bo.marital_status ?? undefined,
+          children_count: bo.children_count ?? undefined,
+          company_history: bo.company_history ?? undefined,
+          company_history_type: bo.company_history_type ?? undefined,
+          education_level: bo.education_level ?? undefined,
+          payer: bo.payer ?? undefined,
+          car_user: bo.car_user ?? undefined,
+          car_user_name: bo.car_user_name ?? undefined,
+          car_user_phone: bo.car_user_phone ?? undefined,
+          address_no: bo.address_no ?? undefined,
+          address_moo: bo.address_moo ?? undefined,
+          address_village: bo.address_village ?? undefined,
+          address_soi: bo.address_soi ?? undefined,
+          address_road: bo.address_road ?? undefined,
+          address_subdistrict: bo.address_subdistrict ?? undefined,
+          address_district: bo.address_district ?? undefined,
+          address_province: bo.address_province ?? undefined,
+          address_postal_code: bo.address_postal_code ?? undefined,
+          address_type: bo.address_type ?? undefined,
+          address_years: bo.address_years ?? undefined,
+          ownership_type: bo.ownership_type ?? undefined,
+          rent_amount: bo.rent_amount ?? undefined,
+          phone_home: bo.phone_home ?? undefined,
+          phone_work: bo.phone_work ?? undefined,
+          phone_fax: bo.phone_fax ?? undefined,
+          mobile_phone: bo.mobile_phone ?? undefined,
+          email: bo.email ?? undefined,
+          line_id: bo.line_id ?? undefined,
+          facebook: bo.facebook ?? undefined,
+          instagram: bo.instagram ?? undefined,
+          map_note: bo.map_note ?? undefined,
+          occupation_type: bo.occupation_type ?? undefined,
+          business_size: bo.business_size ?? undefined,
+          business_type: bo.business_type ?? undefined,
+          asset_value: bo.asset_value ?? undefined,
+          land_value: bo.land_value ?? undefined,
+          employee_count: bo.employee_count ?? undefined,
+          workplace_name: bo.workplace_name ?? undefined,
+          workplace_address: bo.workplace_address ?? undefined,
+          position: bo.position ?? undefined,
+          department: bo.department ?? undefined,
+          income_salary: bo.income_salary ?? undefined,
+          income_commission: bo.income_commission ?? undefined,
+          income_other: bo.income_other ?? undefined,
+          income_foreign_country: bo.income_foreign_country ?? undefined,
+          income_foreign_amount: bo.income_foreign_amount ?? undefined,
+          payment_channel: bo.payment_channel ?? undefined,
+          bank_name: bo.bank_name ?? undefined,
+          bank_account: bo.bank_account ?? undefined,
+          payment_other: bo.payment_other ?? undefined,
+          years_current_job: bo.years_current_job ?? undefined,
+          years_total_job: bo.years_total_job ?? undefined,
+          prev_workplace_name: bo.prev_workplace_name ?? undefined,
+          prev_position: bo.prev_position ?? undefined,
+          prev_department: bo.prev_department ?? undefined,
+          monthly_car_installment: bo.monthly_car_installment ?? undefined,
+          monthly_house_installment: bo.monthly_house_installment ?? undefined,
+        }),
         loan_type: (row.loan_type as LoanType) ?? 'personal_car',
         car_brand: row.car_brand ?? undefined,
         car_model: row.car_model ?? undefined,
@@ -157,6 +220,68 @@ export default function EditLoanPage() {
     const toDate = (v: unknown) => (v ? dayjs(v as dayjs.Dayjs).format('YYYY-MM-DD') : null)
 
     try {
+      const borrower_info: BorrowerInfo = {
+        id_card_expiry_date: toDate(values.id_card_expiry_date) ?? toStr(values.id_card_expiry_date),
+        nationality: toStr(values.nationality),
+        age: toNum(values.age),
+        marital_status: toStr(values.marital_status),
+        children_count: toNum(values.children_count),
+        company_history: toStr(values.company_history),
+        company_history_type: toStr(values.company_history_type),
+        education_level: toStr(values.education_level),
+        payer: toStr(values.payer),
+        car_user: toStr(values.car_user),
+        car_user_name: toStr(values.car_user_name),
+        car_user_phone: toStr(values.car_user_phone),
+        address_no: toStr(values.address_no),
+        address_moo: toStr(values.address_moo),
+        address_village: toStr(values.address_village),
+        address_soi: toStr(values.address_soi),
+        address_road: toStr(values.address_road),
+        address_subdistrict: toStr(values.address_subdistrict),
+        address_district: toStr(values.address_district),
+        address_province: toStr(values.address_province),
+        address_postal_code: toStr(values.address_postal_code),
+        address_type: toStr(values.address_type),
+        address_years: toNum(values.address_years),
+        ownership_type: toStr(values.ownership_type),
+        rent_amount: toNum(values.rent_amount),
+        phone_home: toStr(values.phone_home),
+        phone_work: toStr(values.phone_work),
+        phone_fax: toStr(values.phone_fax),
+        mobile_phone: toStr(values.mobile_phone),
+        email: toStr(values.email),
+        line_id: toStr(values.line_id),
+        facebook: toStr(values.facebook),
+        instagram: toStr(values.instagram),
+        map_note: toStr(values.map_note),
+        occupation_type: toStr(values.occupation_type),
+        business_size: toStr(values.business_size),
+        business_type: toStr(values.business_type),
+        asset_value: toNum(values.asset_value),
+        land_value: toNum(values.land_value),
+        employee_count: toNum(values.employee_count),
+        workplace_name: toStr(values.workplace_name),
+        workplace_address: toStr(values.workplace_address),
+        position: toStr(values.position),
+        department: toStr(values.department),
+        income_salary: toNum(values.income_salary),
+        income_commission: toNum(values.income_commission),
+        income_other: toNum(values.income_other),
+        income_foreign_country: toStr(values.income_foreign_country),
+        income_foreign_amount: toNum(values.income_foreign_amount),
+        payment_channel: toStr(values.payment_channel),
+        bank_name: toStr(values.bank_name),
+        bank_account: toStr(values.bank_account),
+        payment_other: toStr(values.payment_other),
+        years_current_job: toNum(values.years_current_job),
+        years_total_job: toNum(values.years_total_job),
+        prev_workplace_name: toStr(values.prev_workplace_name),
+        prev_position: toStr(values.prev_position),
+        prev_department: toStr(values.prev_department),
+        monthly_car_installment: toNum(values.monthly_car_installment),
+        monthly_house_installment: toNum(values.monthly_house_installment),
+      }
       const updatePayload: Record<string, unknown> = {
         submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
         ...(loan?.status === 'ส่งกลับไปแก้ไข' ? { status: 'รอตรวจสอบ' as const } : {}),
@@ -164,6 +289,7 @@ export default function EditLoanPage() {
         customer_name: toStr(values.customer_name),
         id_card_number: toStr(values.id_card_number),
         birth_date: toDate(values.birth_date),
+        borrower_info: Object.fromEntries(Object.entries(borrower_info).filter(([, v]) => v != null && v !== '')),
         loan_type: toStr(values.loan_type) || null,
         loan_amount: toNum(values.loan_amount),
         closing_amount: toNum(values.closing_amount),
@@ -365,11 +491,14 @@ export default function EditLoanPage() {
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('ข้อมูลผู้กู้')}
+            {sectionTitle('ข้อมูลผู้กู้ — 1. ข้อมูลส่วนตัว')}
           </div>
           <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
             <Form.Item name="customer_name" label="ชื่อ-นามสกุลผู้กู้" rules={[{ required: true }]} className={formItemClass}>
               <Input size="large" placeholder="กรอกชื่อ-นามสกุล" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="birth_date" label="วันเดือนปีเกิดผู้กู้" className={formItemClass}>
+              <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
             </Form.Item>
             <Form.Item name="id_card_number" label="เลขบัตรประชาชน" rules={idCardRules} className={formItemClass}>
               <Input
@@ -381,8 +510,215 @@ export default function EditLoanPage() {
                 onChange={onlyDigitsIdCard}
               />
             </Form.Item>
-            <Form.Item name="birth_date" label="วันเดือนปีเกิดผู้กู้" className={formItemClass}>
+            <Form.Item name="id_card_expiry_date" label="วันหมดอายุบัตร" className={formItemClass}>
               <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
+            </Form.Item>
+            <Form.Item name="nationality" label="สัญชาติ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุสัญชาติ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="age" label="อายุ (ปี)" className={formItemClass}>
+              <InputNumber size="large" min={1} max={120} placeholder="ระบุอายุ" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="marital_status" label="สถานภาพ" className={formItemClass}>
+              <Select size="large" placeholder="เลือกสถานภาพ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกสถานภาพ' }, { value: 'โสด', label: 'โสด' }, { value: 'สมรส', label: 'สมรส' }, { value: 'หย่า', label: 'หย่า' }, { value: 'แยกกันอยู่', label: 'แยกกันอยู่' }]} />
+            </Form.Item>
+            <Form.Item name="children_count" label="จำนวนบุตร (คน)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุจำนวน" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="company_history" label="เคยเป็นลูกค้าของบริษัท" className={formItemClass}>
+              <Radio.Group size="large" className="flex flex-wrap gap-2">
+                <Radio value="ไม่เคย">ไม่เคย</Radio>
+                <Radio value="เคย">เคย</Radio>
+              </Radio.Group>
+            </Form.Item>
+            <Form.Item name="company_history_type" label="ประเภทบริการ (กรณีเคย)" className={formItemClass}>
+              <Input size="large" placeholder="ระบุประเภทบริการ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="education_level" label="ระดับการศึกษา" className={formItemClass}>
+              <Select size="large" placeholder="เลือกระดับการศึกษา" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกระดับการศึกษา' }, { value: 'ต่ำกว่ามัธยมศึกษา', label: 'ต่ำกว่ามัธยมศึกษา' }, { value: 'มัธยมศึกษา', label: 'มัธยมศึกษา' }, { value: 'ปวช./ปวส.', label: 'ปวช./ปวส.' }, { value: 'ปริญญาตรี', label: 'ปริญญาตรี' }, { value: 'ปริญญาโทหรือสูงกว่า', label: 'ปริญญาโทหรือสูงกว่า' }]} />
+            </Form.Item>
+            <Form.Item name="payer" label="ผู้ชำระเงิน" className={formItemClass}>
+              <Select size="large" placeholder="เลือกผู้ชำระเงิน" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกผู้ชำระเงิน' }, { value: 'ตนเอง', label: 'ตนเอง' }, { value: 'บิดา/มารดา', label: 'บิดา/มารดา' }, { value: 'คู่สมรส', label: 'คู่สมรส' }, { value: 'บุตร', label: 'บุตร' }, { value: 'นายจ้าง', label: 'นายจ้าง' }, { value: 'ผู้ค้ำประกัน', label: 'ผู้ค้ำประกัน' }, { value: 'รับภาระร่วมกันหลายคน', label: 'รับภาระร่วมกันหลายคน' }, { value: 'อื่นๆ', label: 'อื่นๆ' }]} />
+            </Form.Item>
+            <Form.Item name="car_user" label="ผู้ใช้รถ" className={formItemClass}>
+              <Select size="large" placeholder="เลือกผู้ใช้รถ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกผู้ใช้รถ' }, { value: 'ตนเอง', label: 'ตนเอง' }, { value: 'บิดา/มารดา', label: 'บิดา/มารดา' }, { value: 'คู่สมรส', label: 'คู่สมรส' }, { value: 'บุตร', label: 'บุตร' }, { value: 'ลูกจ้าง', label: 'ลูกจ้าง' }, { value: 'ผู้ค้ำประกัน', label: 'ผู้ค้ำประกัน' }]} />
+            </Form.Item>
+            <Form.Item name="car_user_name" label="ชื่อผู้ใช้รถ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุชื่อ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="car_user_phone" label="โทรผู้ใช้รถ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุเบอร์โทรศัพท์" className="!rounded-lg w-full" />
+            </Form.Item>
+          </div>
+        </section>
+
+        {/* 2. ที่อยู่ปัจจุบัน */}
+        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+            {sectionTitle('ข้อมูลผู้กู้สินเชื่อ — 2. ที่อยู่ปัจจุบัน')}
+          </div>
+          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+            <Form.Item name="address_no" label="เลขที่" className={formItemClass}>
+              <Input size="large" placeholder="ระบุเลขที่" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_moo" label="หมู่ที่" className={formItemClass}>
+              <Input size="large" placeholder="ระบุหมู่ที่" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_village" label="หมู่บ้าน/อาคาร" className={formItemClass}>
+              <Input size="large" placeholder="ระบุหมู่บ้าน/อาคาร" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_soi" label="ซอย" className={formItemClass}>
+              <Input size="large" placeholder="ระบุซอย" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_road" label="ถนน" className={formItemClass}>
+              <Input size="large" placeholder="ระบุถนน" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_subdistrict" label="แขวง/ตำบล" className={formItemClass}>
+              <Input size="large" placeholder="ระบุแขวง/ตำบล" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_district" label="เขต/อำเภอ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุเขต/อำเภอ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_province" label="จังหวัด" className={formItemClass}>
+              <Input size="large" placeholder="ระบุจังหวัด" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="address_postal_code" label="รหัสไปรษณีย์" className={formItemClass}>
+              <Input size="large" placeholder="ระบุรหัสไปรษณีย์" className="!rounded-lg w-full" maxLength={5} />
+            </Form.Item>
+            <Form.Item name="address_type" label="ลักษณะที่อยู่" className={formItemClass}>
+              <Select size="large" placeholder="เลือกลักษณะที่อยู่" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกลักษณะที่อยู่' }, { value: 'ตึกแถว', label: 'ตึกแถว' }, { value: 'ทาวน์เฮ้าส์', label: 'ทาวน์เฮ้าส์' }, { value: 'บ้านเดี่ยว', label: 'บ้านเดี่ยว' }, { value: 'คอนโดมิเนียม', label: 'คอนโดมิเนียม' }, { value: 'อพาร์ทเม้นท์', label: 'อพาร์ทเม้นท์' }]} />
+            </Form.Item>
+            <Form.Item name="address_years" label="อยู่อาศัยมากี่ปี" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุจำนวนปี" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="ownership_type" label="ลักษณะการเป็นเจ้าของ" className={formItemClass}>
+              <Select size="large" placeholder="เลือกลักษณะการเป็นเจ้าของ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกลักษณะการเป็นเจ้าของ' }, { value: 'บ้านตนเอง', label: 'บ้านตนเอง' }, { value: 'บ้านพ่อแม่', label: 'บ้านพ่อแม่' }, { value: 'บ้านญาติ', label: 'บ้านญาติ' }, { value: 'บ้านเช่า', label: 'บ้านเช่า' }, { value: 'อื่นๆ', label: 'อื่นๆ' }]} />
+            </Form.Item>
+            <Form.Item name="rent_amount" label="ค่าเช่าเดือนละ (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุค่าเช่า" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+          </div>
+        </section>
+
+        {/* 3. ช่องทางการติดต่อ */}
+        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+            {sectionTitle('ข้อมูลผู้กู้สินเชื่อ — 3. ช่องทางการติดต่อ')}
+          </div>
+          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+            <Form.Item name="phone_home" label="เบอร์บ้าน" className={formItemClass}>
+              <Input size="large" placeholder="เบอร์บ้าน" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="phone_work" label="เบอร์ที่ทำงาน" className={formItemClass}>
+              <Input size="large" placeholder="เบอร์ที่ทำงาน" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="phone_fax" label="โทรสาร" className={formItemClass}>
+              <Input size="large" placeholder="โทรสาร" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="mobile_phone" label="โทรศัพท์มือถือ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุเบอร์มือถือ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="email" label="Email" className={formItemClass}>
+              <Input size="large" type="email" placeholder="ระบุ Email" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="line_id" label="ID Line" className={formItemClass}>
+              <Input size="large" placeholder="ระบุ ID Line" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="facebook" label="Facebook" className={formItemClass}>
+              <Input size="large" placeholder="ระบุ Facebook" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="instagram" label="Instagram" className={formItemClass}>
+              <Input size="large" placeholder="ระบุ Instagram" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="map_note" label="แผนที่ (ที่อยู่บ้าน/ที่ทำงาน)" className={formItemClassFull}>
+              <Input.TextArea rows={2} placeholder="ระบุหรืออธิบายตำแหน่งแผนที่บ้านและที่ทำงาน" className="!rounded-lg [&_.ant-input]:min-h-[60px]" />
+            </Form.Item>
+          </div>
+        </section>
+
+        {/* 4. อาชีพและรายได้ */}
+        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+            {sectionTitle('ข้อมูลผู้กู้สินเชื่อ — 4. อาชีพและรายได้')}
+          </div>
+          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+            <Form.Item name="occupation_type" label="ประเภทอาชีพ" className={formItemClass}>
+              <Select size="large" placeholder="เลือกประเภทอาชีพ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกประเภทอาชีพ' }, { value: 'ข้าราชการ', label: 'ข้าราชการ' }, { value: 'ทหาร/ตำรวจ', label: 'ทหาร/ตำรวจ' }, { value: 'ครู/อาจารย์', label: 'ครู/อาจารย์' }, { value: 'พนักงานออฟฟิศ', label: 'พนักงานออฟฟิศ' }, { value: 'พนักงานรัฐวิสาหกิจ', label: 'พนักงานรัฐวิสาหกิจ' }, { value: 'นายหน้า/ตัวแทน', label: 'นายหน้า/ตัวแทน' }, { value: 'อาชีพอิสระ', label: 'อาชีพอิสระ' }]} />
+            </Form.Item>
+            <Form.Item name="business_size" label="กรณีค้าขาย/ธุรกิจส่วนตัว" className={formItemClass}>
+              <Select size="large" placeholder="เลือกขนาดธุรกิจ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกขนาดธุรกิจ' }, { value: 'ขนาดเล็ก', label: 'ขนาดเล็ก' }, { value: 'ขนาดกลาง', label: 'ขนาดกลาง' }, { value: 'ขนาดใหญ่', label: 'ขนาดใหญ่' }]} />
+            </Form.Item>
+            <Form.Item name="business_type" label="ประเภทธุรกิจ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุลักษณะธุรกิจ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="asset_value" label="มูลค่าทรัพย์สินถาวร ไม่รวมที่ดิน (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุมูลค่า" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="land_value" label="มูลค่าที่ดิน (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุมูลค่าที่ดิน" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="employee_count" label="จำนวนพนักงาน" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุจำนวน" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="workplace_name" label="ชื่อบริษัท/หน่วยงาน" className={formItemClass}>
+              <Input size="large" placeholder="ระบุชื่อบริษัท/หน่วยงาน" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="workplace_address" label="ที่ตั้งสถานที่ทำงาน" className={formItemClass}>
+              <Input size="large" placeholder="ที่ตั้งโดยละเอียด" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="position" label="ตำแหน่ง" className={formItemClass}>
+              <Input size="large" placeholder="ระบุตำแหน่ง" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="department" label="ฝ่าย/แผนก" className={formItemClass}>
+              <Input size="large" placeholder="ระบุฝ่าย/แผนก" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="income_salary" label="รายได้เงินเดือน/กำไรสุทธิ (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="income_commission" label="รายได้ค่าคอมมิชชั่น (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="income_other" label="รายได้อื่นๆ (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="income_foreign_country" label="รายได้จากต่างประเทศ — ประเทศ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุประเทศ (ถ้ามี)" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="income_foreign_amount" label="รายได้จากต่างประเทศ — จำนวน (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="payment_channel" label="ช่องทางการรับเงิน" className={formItemClass}>
+              <Select size="large" placeholder="เลือกช่องทาง" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกช่องทาง' }, { value: 'เข้าบัญชีธนาคาร', label: 'เข้าบัญชีธนาคาร' }, { value: 'เงินสด', label: 'เงินสด' }, { value: 'อื่นๆ', label: 'อื่นๆ' }]} />
+            </Form.Item>
+            <Form.Item name="bank_name" label="ชื่อธนาคาร" className={formItemClass}>
+              <Input size="large" placeholder="ระบุชื่อธนาคาร" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="bank_account" label="เลขที่บัญชี" className={formItemClass}>
+              <Input size="large" placeholder="ระบุเลขที่บัญชี" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="payment_other" label="ช่องทางรับเงิน อื่นๆ" className={formItemClass}>
+              <Input size="large" placeholder="ระบุ" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="years_current_job" label="อายุงานที่ทำงานปัจจุบัน (ปี)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุปี" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="years_total_job" label="อายุงานรวม (ปี)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุปี" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="prev_workplace_name" label="ชื่อสถานที่ทำงานเดิม (กรณีอายุงานปัจจุบันไม่ถึง 1 ปี)" className={formItemClass}>
+              <Input size="large" placeholder="ระบุชื่อสถานที่ทำงานเดิม" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="prev_position" label="ตำแหน่ง (ที่ทำงานเดิม)" className={formItemClass}>
+              <Input size="large" placeholder="ระบุตำแหน่ง" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="prev_department" label="ฝ่าย/แผนก (ที่ทำงานเดิม)" className={formItemClass}>
+              <Input size="large" placeholder="ระบุฝ่าย/แผนก" className="!rounded-lg w-full" />
+            </Form.Item>
+            <Form.Item name="monthly_car_installment" label="ภาระประจำเดือน — ค่างวดรถ (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
+            </Form.Item>
+            <Form.Item name="monthly_house_installment" label="ภาระประจำเดือน — ค่างวดบ้าน (บาท)" className={formItemClass}>
+              <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
             </Form.Item>
           </div>
         </section>
@@ -403,6 +739,7 @@ export default function EditLoanPage() {
                 placeholder="เลือกประเภทสินเชื่อ"
                 className="!rounded-lg w-full"
                 options={[
+                  { value: '', label: 'เลือกประเภทสินเชื่อ' },
                   { value: 'personal_car', label: 'รถยนต์ส่วนบุคคล (รถยนต์นั่งไม่เกิน 7 ที่นั่ง)' },
                   { value: 'commercial_vehicle', label: 'รถยนต์เชิงพาณิชย์' },
                   { value: 'land_title', label: 'โฉนดที่ดิน' },

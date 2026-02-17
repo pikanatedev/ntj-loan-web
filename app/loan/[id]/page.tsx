@@ -5,8 +5,109 @@ import { useParams, useRouter } from 'next/navigation'
 import { Modal, Input, message, Spin } from 'antd'
 import { FilePdfOutlined, FileOutlined } from '@ant-design/icons'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
-import type { StaffUser, Loan, LoanAttachment, LoanApprovalHistoryEntry } from '@/lib/types'
+import type { StaffUser, Loan, LoanAttachment, LoanApprovalHistoryEntry, BorrowerInfo } from '@/lib/types'
 import { formatNum, formatDate } from '@/lib/types'
+
+const BORROWER_INFO_LABELS: Record<keyof BorrowerInfo, string> = {
+  id_card_expiry_date: 'วันหมดอายุบัตร',
+  nationality: 'สัญชาติ',
+  age: 'อายุ (ปี)',
+  marital_status: 'สถานภาพ',
+  children_count: 'จำนวนบุตร',
+  company_history: 'เคยเป็นลูกค้าของบริษัท',
+  company_history_type: 'ประเภทบริการ',
+  education_level: 'ระดับการศึกษา',
+  payer: 'ผู้ชำระเงิน',
+  car_user: 'ผู้ใช้รถ',
+  car_user_name: 'ชื่อผู้ใช้รถ',
+  car_user_phone: 'โทรผู้ใช้รถ',
+  address_no: 'เลขที่',
+  address_moo: 'หมู่ที่',
+  address_village: 'หมู่บ้าน/อาคาร',
+  address_soi: 'ซอย',
+  address_road: 'ถนน',
+  address_subdistrict: 'แขวง/ตำบล',
+  address_district: 'เขต/อำเภอ',
+  address_province: 'จังหวัด',
+  address_postal_code: 'รหัสไปรษณีย์',
+  address_type: 'ลักษณะที่อยู่',
+  address_years: 'อยู่อาศัยมากี่ปี',
+  ownership_type: 'ลักษณะการเป็นเจ้าของ',
+  rent_amount: 'ค่าเช่าเดือนละ (บาท)',
+  phone_home: 'เบอร์บ้าน',
+  phone_work: 'เบอร์ที่ทำงาน',
+  phone_fax: 'โทรสาร',
+  mobile_phone: 'โทรศัพท์มือถือ',
+  email: 'Email',
+  line_id: 'ID Line',
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  map_note: 'แผนที่',
+  occupation_type: 'ประเภทอาชีพ',
+  business_size: 'ขนาดธุรกิจ',
+  business_type: 'ประเภทธุรกิจ',
+  asset_value: 'มูลค่าทรัพย์สินถาวร (บาท)',
+  land_value: 'มูลค่าที่ดิน (บาท)',
+  employee_count: 'จำนวนพนักงาน',
+  workplace_name: 'ชื่อบริษัท/หน่วยงาน',
+  workplace_address: 'ที่ตั้งที่ทำงาน',
+  position: 'ตำแหน่ง',
+  department: 'ฝ่าย/แผนก',
+  income_salary: 'รายได้เงินเดือน/กำไรสุทธิ (บาท)',
+  income_commission: 'รายได้ค่าคอมมิชชั่น (บาท)',
+  income_other: 'รายได้อื่นๆ (บาท)',
+  income_foreign_country: 'รายได้จากต่างประเทศ — ประเทศ',
+  income_foreign_amount: 'รายได้จากต่างประเทศ — จำนวน (บาท)',
+  payment_channel: 'ช่องทางการรับเงิน',
+  bank_name: 'ชื่อธนาคาร',
+  bank_account: 'เลขที่บัญชี',
+  payment_other: 'ช่องทางรับเงิน อื่นๆ',
+  years_current_job: 'อายุงานที่ทำงานปัจจุบัน (ปี)',
+  years_total_job: 'อายุงานรวม (ปี)',
+  prev_workplace_name: 'ที่ทำงานเดิม — ชื่อ',
+  prev_position: 'ที่ทำงานเดิม — ตำแหน่ง',
+  prev_department: 'ที่ทำงานเดิม — ฝ่าย/แผนก',
+  monthly_car_installment: 'ภาระค่างวดรถ (บาท)',
+  monthly_house_installment: 'ภาระค่างวดบ้าน (บาท)',
+}
+
+function BorrowerInfoGrid({
+  info,
+  keys,
+  formatDate: fd,
+  formatNum: fn,
+}: {
+  info: BorrowerInfo
+  keys: (keyof BorrowerInfo)[]
+  formatDate: (v: string | null | undefined) => string
+  formatNum: (v: number | null | undefined) => string
+}) {
+  const numKeys: (keyof BorrowerInfo)[] = ['age', 'children_count', 'address_years', 'rent_amount', 'asset_value', 'land_value', 'employee_count', 'income_salary', 'income_commission', 'income_other', 'income_foreign_amount', 'years_current_job', 'years_total_job', 'monthly_car_installment', 'monthly_house_installment']
+  const dateKeys: (keyof BorrowerInfo)[] = ['id_card_expiry_date']
+  const entries = keys
+    .map((k) => {
+      const v = info[k]
+      if (v == null || v === '') return null
+      const label = BORROWER_INFO_LABELS[k] ?? k
+      let display: string
+      if (dateKeys.includes(k) && typeof v === 'string') display = fd(v)
+      else if (numKeys.includes(k) && typeof v === 'number') display = fn(v)
+      else display = String(v)
+      return { label, display }
+    })
+    .filter(Boolean) as { label: string; display: string }[]
+  if (entries.length === 0) return <p className="text-gray-500 text-sm">—</p>
+  return (
+    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
+      {entries.map(({ label, display }) => (
+        <span key={label} className="contents">
+          <dt className="text-gray-500">{label}</dt>
+          <dd className="text-gray-900">{display}</dd>
+        </span>
+      ))}
+    </dl>
+  )
+}
 
 export default function LoanDetailPage() {
   const params = useParams()
@@ -258,16 +359,36 @@ export default function LoanDetailPage() {
         </div>
 
         <div className="p-4 sm:p-6 border-b border-gray-200">
-          <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้</h2>
+          <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้ — 1. ข้อมูลส่วนตัว</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-gray-500">ชื่อ-นามสกุล</dt>
             <dd className="text-gray-900">{loan.customer_name ?? '—'}</dd>
+            <dt className="text-gray-500">วันเดือนปีเกิดผู้กู้</dt>
+            <dd className="text-gray-900">{formatDate(loan.birth_date)}</dd>
             <dt className="text-gray-500">เลขบัตรประชาชน</dt>
             <dd className="text-gray-900">{loan.id_card_number ?? '—'}</dd>
-            <dt className="text-gray-500">วันเกิด</dt>
-            <dd className="text-gray-900">{formatDate(loan.birth_date)}</dd>
           </dl>
+          {(loan.borrower_info as BorrowerInfo | undefined) && (
+            <BorrowerInfoGrid info={loan.borrower_info as BorrowerInfo} keys={['id_card_expiry_date', 'nationality', 'age', 'marital_status', 'children_count', 'company_history', 'company_history_type', 'education_level', 'payer', 'car_user', 'car_user_name', 'car_user_phone']} formatDate={formatDate} formatNum={formatNum} />
+          )}
         </div>
+
+        {(loan.borrower_info as BorrowerInfo | undefined) && Object.keys(loan.borrower_info as BorrowerInfo).length > 0 && (
+          <>
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้สินเชื่อ — 2. ที่อยู่ปัจจุบัน</h2>
+              <BorrowerInfoGrid info={loan.borrower_info as BorrowerInfo} keys={['address_no', 'address_moo', 'address_village', 'address_soi', 'address_road', 'address_subdistrict', 'address_district', 'address_province', 'address_postal_code', 'address_type', 'address_years', 'ownership_type', 'rent_amount']} formatDate={formatDate} formatNum={formatNum} />
+            </div>
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้สินเชื่อ — 3. ช่องทางการติดต่อ</h2>
+              <BorrowerInfoGrid info={loan.borrower_info as BorrowerInfo} keys={['phone_home', 'phone_work', 'phone_fax', 'mobile_phone', 'email', 'line_id', 'facebook', 'instagram', 'map_note']} formatDate={formatDate} formatNum={formatNum} />
+            </div>
+            <div className="p-4 sm:p-6 border-b border-gray-200">
+              <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้สินเชื่อ — 4. อาชีพและรายได้</h2>
+              <BorrowerInfoGrid info={loan.borrower_info as BorrowerInfo} keys={['occupation_type', 'business_size', 'business_type', 'asset_value', 'land_value', 'employee_count', 'workplace_name', 'workplace_address', 'position', 'department', 'income_salary', 'income_commission', 'income_other', 'income_foreign_country', 'income_foreign_amount', 'payment_channel', 'bank_name', 'bank_account', 'payment_other', 'years_current_job', 'years_total_job', 'prev_workplace_name', 'prev_position', 'prev_department', 'monthly_car_installment', 'monthly_house_installment']} formatDate={formatDate} formatNum={formatNum} />
+            </div>
+          </>
+        )}
 
         {isLandTitle ? (
           <div className="p-4 sm:p-6 border-b border-gray-200">
