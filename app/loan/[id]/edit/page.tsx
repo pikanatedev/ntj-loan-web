@@ -9,6 +9,7 @@ import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@an
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
+import { ThaiAddressSelects } from '@/app/components/ThaiAddressSelects'
 import type { StaffUser, Loan, LoanAttachment, LoanType, BorrowerInfo } from '@/lib/types'
 
 export default function EditLoanPage() {
@@ -573,18 +574,7 @@ export default function EditLoanPage() {
             <Form.Item name="address_road" label="ถนน" className={formItemClass}>
               <Input size="large" placeholder="ระบุถนน" className="!rounded-lg w-full" />
             </Form.Item>
-            <Form.Item name="address_subdistrict" label="แขวง/ตำบล" className={formItemClass}>
-              <Input size="large" placeholder="ระบุแขวง/ตำบล" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="address_district" label="เขต/อำเภอ" className={formItemClass}>
-              <Input size="large" placeholder="ระบุเขต/อำเภอ" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="address_province" label="จังหวัด" className={formItemClass}>
-              <Input size="large" placeholder="ระบุจังหวัด" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="address_postal_code" label="รหัสไปรษณีย์" className={formItemClass}>
-              <Input size="large" placeholder="ระบุรหัสไปรษณีย์" className="!rounded-lg w-full" maxLength={5} />
-            </Form.Item>
+            <ThaiAddressSelects form={form} namePrefix="address" className={formItemClass} />
             <Form.Item name="address_type" label="ลักษณะที่อยู่" className={formItemClass}>
               <Select size="large" placeholder="เลือกลักษณะที่อยู่" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกลักษณะที่อยู่' }, { value: 'ตึกแถว', label: 'ตึกแถว' }, { value: 'ทาวน์เฮ้าส์', label: 'ทาวน์เฮ้าส์' }, { value: 'บ้านเดี่ยว', label: 'บ้านเดี่ยว' }, { value: 'คอนโดมิเนียม', label: 'คอนโดมิเนียม' }, { value: 'อพาร์ทเม้นท์', label: 'อพาร์ทเม้นท์' }]} />
             </Form.Item>
