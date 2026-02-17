@@ -11,10 +11,10 @@ const formItemClass =
 
 const OTHER_VALUE = 'อื่นๆ'
 
-const WHEEL_OPTIONS = [
+const WHEEL_OPTIONS: { value: string; label: string }[] = [
   { value: '6 ล้อ', label: '6 ล้อ' },
   { value: '10 ล้อ', label: '10 ล้อ' },
-] as const
+]
 
 function wheelTypeToApi(wheelLabel: string | undefined): string | null {
   if (wheelLabel === '6 ล้อ') return '6'
