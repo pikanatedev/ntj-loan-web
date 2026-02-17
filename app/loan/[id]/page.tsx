@@ -381,7 +381,7 @@ export default function LoanDetailPage() {
             </div>
             <div className="p-4 sm:p-6 border-b border-gray-200">
               <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้สินเชื่อ — 3. ช่องทางการติดต่อ</h2>
-              <BorrowerInfoGrid info={loan.borrower_info as BorrowerInfo} keys={['phone_home', 'phone_work', 'phone_fax', 'mobile_phone', 'email', 'line_id', 'facebook', 'instagram', 'map_note']} formatDate={formatDate} formatNum={formatNum} />
+              <BorrowerInfoGrid info={loan.borrower_info as BorrowerInfo} keys={['mobile_phone', 'phone_home', 'phone_work', 'phone_fax', 'email', 'line_id', 'facebook', 'instagram', 'map_note']} formatDate={formatDate} formatNum={formatNum} />
             </div>
             <div className="p-4 sm:p-6 border-b border-gray-200">
               <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">ข้อมูลผู้กู้สินเชื่อ — 4. อาชีพและรายได้</h2>

@@ -429,6 +429,9 @@ export default function NewLoanPage() {
             {sectionTitle('ข้อมูลผู้กู้สินเชื่อ — 3. ช่องทางการติดต่อ')}
           </div>
           <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+            <Form.Item name="mobile_phone" label="โทรศัพท์มือถือ" rules={[{ required: true, message: 'กรุณากรอกโทรศัพท์มือถือ' }]} className={formItemClass}>
+              <Input size="large" placeholder="ระบุเบอร์มือถือ" className="!rounded-lg w-full" />
+            </Form.Item>
             <Form.Item name="phone_home" label="เบอร์บ้าน" className={formItemClass}>
               <Input size="large" placeholder="เบอร์บ้าน" className="!rounded-lg w-full" />
             </Form.Item>
@@ -437,9 +440,6 @@ export default function NewLoanPage() {
             </Form.Item>
             <Form.Item name="phone_fax" label="โทรสาร" className={formItemClass}>
               <Input size="large" placeholder="โทรสาร" className="!rounded-lg w-full" />
-            </Form.Item>
-            <Form.Item name="mobile_phone" label="โทรศัพท์มือถือ" className={formItemClass}>
-              <Input size="large" placeholder="ระบุเบอร์มือถือ" className="!rounded-lg w-full" />
             </Form.Item>
             <Form.Item name="email" label="Email" className={formItemClass}>
               <Input size="large" type="email" placeholder="ระบุ Email" className="!rounded-lg w-full" />
