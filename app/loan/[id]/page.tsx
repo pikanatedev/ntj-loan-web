@@ -263,7 +263,7 @@ export default function LoanDetailPage() {
             <dd className="text-gray-900">{formatNum(loan.closing_amount)}</dd>
             <dt className="text-gray-500">จำนวนงวด (เดือน)</dt>
             <dd className="text-gray-900">{loan.term_months ?? '—'}</dd>
-            <dt className="text-gray-500">อัตราดอกเบี้ย (%)</dt>
+            <dt className="text-gray-500">อัตราดอกเบี้ย (% ต่อเดือน)</dt>
             <dd className="text-gray-900">{loan.interest_rate ?? '—'}</dd>
             <dt className="text-gray-500">สถานะ</dt>
             <dd>

@@ -23,6 +23,22 @@ export default function NewLoanPage() {
 
   const isLandTitle = loanType === 'land_title'
 
+  const watchedLoanAmount = Form.useWatch('loan_amount', form)
+  const watchedTermMonths = Form.useWatch('term_months', form)
+  const watchedInterestRate = Form.useWatch('interest_rate', form)
+
+  /** คำนวณแบบ Flat Rate: อัตราต่อเดือน → ดอกเบี้ยต่อเดือน = ยอดกู้ × อัตราต่อเดือน, ดอกเบี้ยรวม = ดอกเบี้ยต่อเดือน × จำนวนเดือน, ยอดผ่อน/เดือน = (ยอดกู้ + ดอกเบี้ยรวม) / จำนวนเดือน */
+  const calculatedMonthlyInstallment = (() => {
+    const principal = Number(watchedLoanAmount)
+    const months = Number(watchedTermMonths)
+    const ratePerMonth = Number(watchedInterestRate) / 100 // อัตรา % ต่อเดือน
+    if (!principal || principal <= 0 || !months || months <= 0 || ratePerMonth < 0 || Number.isNaN(ratePerMonth)) return null
+    const monthlyInterest = principal * ratePerMonth
+    const totalInterest = monthlyInterest * months
+    const totalRepay = principal + totalInterest
+    return totalRepay / months
+  })()
+
   useEffect(() => {
     const stored = localStorage.getItem('loan_user')
     if (!stored) {
@@ -408,7 +424,7 @@ export default function NewLoanPage() {
             </Form.Item>
             <Form.Item
               name="interest_rate"
-              label="อัตราดอกเบี้ย (%)"
+              label="อัตราดอกเบี้ย (% ต่อเดือน)"
               rules={[{ type: 'number', message: 'กรอกตัวเลขเท่านั้น' }]}
               className={formItemClass}
             >
@@ -416,11 +432,20 @@ export default function NewLoanPage() {
                 size="large"
                 className="!w-full"
                 min={0}
-                placeholder="เช่น 3.5"
+                placeholder="เช่น 1.25"
                 addonAfter="%"
                 controls={false}
                 onKeyDown={allowDigitsAndDecimalKey}
                 inputMode="decimal"
+              />
+            </Form.Item>
+            <Form.Item label="ยอดผ่อนต่อเดือน (บาท)" className={formItemClass}>
+              <Input
+                size="large"
+                disabled
+                value={calculatedMonthlyInstallment != null ? formatCurrency(calculatedMonthlyInstallment) : ''}
+                placeholder="กรอกยอดจัด จำนวนงวด และอัตราดอกเบี้ยต่อเดือนครบจะแสดงผลคำนวณ (Flat Rate)"
+                className="!rounded-lg w-full !bg-gray-50"
               />
             </Form.Item>
           </div>
