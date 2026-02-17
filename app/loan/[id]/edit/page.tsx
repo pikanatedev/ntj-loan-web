@@ -54,7 +54,10 @@ export default function EditLoanPage() {
         return
       }
       const row = data as Loan
-      if (row.status !== 'รอตรวจสอบ' || row.sale_id !== user.id) {
+      if (
+        (row.status !== 'รอตรวจสอบ' && row.status !== 'ส่งกลับไปแก้ไข') ||
+        row.sale_id !== user.id
+      ) {
         setLoan(null)
         setLoading(false)
         return
@@ -156,6 +159,7 @@ export default function EditLoanPage() {
     try {
       const updatePayload: Record<string, unknown> = {
         submission_date: toDate(values.submission_date) || dayjs().format('YYYY-MM-DD'),
+        ...(loan?.status === 'ส่งกลับไปแก้ไข' ? { status: 'รอตรวจสอบ' as const } : {}),
         loan_reference_number: toStr(values.loan_reference_number),
         customer_name: toStr(values.customer_name),
         id_card_number: toStr(values.id_card_number),
@@ -275,28 +279,6 @@ export default function EditLoanPage() {
     else if (!/^[\d.]$/.test(e.key)) e.preventDefault()
   }
 
-  if (user == null || loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
-        <p className="text-gray-500">กำลังโหลด...</p>
-      </div>
-    )
-  }
-
-  if (!loan) {
-    return (
-      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] bg-[#FBE437]">
-        <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
-        <Link
-          href="/"
-          className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium touch-manipulation"
-        >
-          กลับหน้ารายการ
-        </Link>
-      </div>
-    )
-  }
-
   const sectionTitle = (title: string) => (
     <div className="flex items-center gap-2 mb-4">
       <span className="w-1 h-6 sm:h-7 bg-red-600 rounded-full shrink-0" aria-hidden />
@@ -329,26 +311,46 @@ export default function EditLoanPage() {
   })()
 
   return (
-    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-red-700">แก้ไขข้อมูลสินเชื่อ</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            href={`/loan/${id}`}
-            className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
-          >
-            กลับรายละเอียด
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
-          >
-            หน้ารายการ
-          </Link>
-        </div>
-      </div>
-
-      <Form form={form} layout="vertical" onFinish={onFinish} className="space-y-6 sm:space-y-8">
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={loan ? onFinish : undefined}
+      className="space-y-6 sm:space-y-8"
+    >
+      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
+        {user == null || loading ? (
+          <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
+            <p className="text-gray-500">กำลังโหลด...</p>
+          </div>
+        ) : !loan ? (
+          <>
+            <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
+            <Link
+              href="/"
+              className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation"
+            >
+              กลับหน้ารายการ
+            </Link>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
+              <h1 className="text-xl sm:text-2xl font-bold text-red-700">แก้ไขข้อมูลสินเชื่อ</h1>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/loan/${id}`}
+                  className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+                >
+                  กลับรายละเอียด
+                </Link>
+                <Link
+                  href="/"
+                  className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+                >
+                  หน้ารายการ
+                </Link>
+              </div>
+            </div>
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
             {sectionTitle('เลขที่อ้างอิงสินเชื่อ')}
@@ -722,7 +724,9 @@ export default function EditLoanPage() {
             {submitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
           </Button>
         </div>
-      </Form>
-    </div>
+          </>
+        )}
+      </div>
+    </Form>
   )
 }

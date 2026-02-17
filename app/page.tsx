@@ -15,6 +15,7 @@ const PAGE_SIZE = 10
 const STATUS_OPTIONS = [
   { value: '', label: 'ทุกสถานะ' },
   { value: 'รอตรวจสอบ', label: 'รอตรวจสอบ' },
+  { value: 'ส่งกลับไปแก้ไข', label: 'ส่งกลับไปแก้ไข' },
   { value: 'อนุมัติ', label: 'อนุมัติ' },
   { value: 'ปฏิเสธ', label: 'ปฏิเสธ' },
 ]
@@ -294,7 +295,13 @@ export default function ListPage() {
                   {loan.closing_amount != null && ` | ปิดบัญชี: ${formatNum(loan.closing_amount)}`} | สถานะ:{' '}
                   <span
                     className={`ml-1 font-bold ${
-                      loan.status === 'อนุมัติ' ? 'text-green-600' : loan.status === 'ปฏิเสธ' ? 'text-red-600' : 'text-amber-600'
+                      loan.status === 'อนุมัติ'
+                        ? 'text-green-600'
+                        : loan.status === 'ปฏิเสธ'
+                          ? 'text-red-600'
+                          : loan.status === 'ส่งกลับไปแก้ไข'
+                            ? 'text-orange-600'
+                            : 'text-amber-600'
                     }`}
                   >
                     {loan.status ?? '—'}

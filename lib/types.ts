@@ -2,6 +2,16 @@ export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' | 
 
 export type LoanAttachment = { id: string; loan_id: string; file_path: string; file_name: string }
 
+/** ประวัติการดำเนินการของผู้อนุมัติ (ส่งกลับไปแก้ไข, อนุมัติ, ปฏิเสธ) */
+export type LoanApprovalHistoryEntry = {
+  id: string
+  loan_id: string
+  action: string
+  comment?: string | null
+  staff_name?: string | null
+  created_at?: string | null
+}
+
 /** ประเภทสินเชื่อ: รถยนต์ส่วนบุคคล | รถยนต์เชิงพาณิชย์ | โฉนดที่ดิน */
 export type LoanType = 'personal_car' | 'commercial_vehicle' | 'land_title'
 

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Modal, Input, message, Spin } from 'antd'
 import { FilePdfOutlined, FileOutlined } from '@ant-design/icons'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
-import type { StaffUser, Loan, LoanAttachment } from '@/lib/types'
+import type { StaffUser, Loan, LoanAttachment, LoanApprovalHistoryEntry } from '@/lib/types'
 import { formatNum, formatDate } from '@/lib/types'
 
 export default function LoanDetailPage() {
@@ -15,8 +15,9 @@ export default function LoanDetailPage() {
   const [user, setUser] = useState<StaffUser | null>(null)
   const [loan, setLoan] = useState<Loan | null>(null)
   const [loading, setLoading] = useState(true)
-  const [commentModal, setCommentModal] = useState<'approve' | 'reject' | null>(null)
+  const [commentModal, setCommentModal] = useState<'approve' | 'reject' | 'return_revision' | null>(null)
   const [comment, setComment] = useState('')
+  const [revisionHistory, setRevisionHistory] = useState<LoanApprovalHistoryEntry[]>([])
   const [modalLoading, setModalLoading] = useState(false)
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({})
   const [previewFile, setPreviewFile] = useState<{ url: string; fileName: string } | null>(null)
@@ -54,6 +55,19 @@ export default function LoanDetailPage() {
     fetchLoan()
   }, [id])
 
+  useEffect(() => {
+    if (!id) return
+    const fetchHistory = async () => {
+      const { data } = await supabase
+        .from('loan_approval_history')
+        .select('*')
+        .eq('loan_id', id)
+        .order('created_at', { ascending: false })
+      setRevisionHistory((data as LoanApprovalHistoryEntry[]) ?? [])
+    }
+    fetchHistory()
+  }, [id])
+
   const handleApprove = () => {
     if (!user) return
     setComment('')
@@ -66,23 +80,57 @@ export default function LoanDetailPage() {
     setCommentModal('reject')
   }
 
+  const handleReturnForRevision = () => {
+    if (!user) return
+    setComment('')
+    setCommentModal('return_revision')
+  }
+
   const submitCommentModal = async () => {
     if (!user || !commentModal) return
+    if (commentModal === 'return_revision' && !comment?.trim()) {
+      message.warning('กรุณาระบุเหตุผลหรือข้อความส่งกลับไปแก้ไข')
+      return
+    }
     setModalLoading(true)
     try {
-      const { error } = await supabase
+      const status =
+        commentModal === 'approve'
+          ? 'อนุมัติ'
+          : commentModal === 'reject'
+            ? 'ปฏิเสธ'
+            : 'ส่งกลับไปแก้ไข'
+      const { error: updateError } = await supabase
         .from('loans')
         .update({
-          status: commentModal === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ',
+          status,
           approver_name: user.name,
           approver_comment: comment?.trim() || null,
         })
         .eq('id', id)
-      if (error) {
-        message.error(error.message || 'อัปเดตสถานะไม่สำเร็จ')
+      if (updateError) {
+        message.error(updateError.message || 'อัปเดตสถานะไม่สำเร็จ')
         return
       }
-      message.success(commentModal === 'approve' ? 'อนุมัติสินเชื่อเรียบร้อย' : 'บันทึกการปฏิเสธเรียบร้อย')
+      if (commentModal === 'return_revision') {
+        const { error: histError } = await supabase.from('loan_approval_history').insert({
+          loan_id: id,
+          action: 'ส่งกลับไปแก้ไข',
+          comment: comment?.trim() || null,
+          staff_name: user.name,
+        })
+        if (histError) {
+          message.error(histError.message || 'บันทึกประวัติไม่สำเร็จ')
+          return
+        }
+      }
+      message.success(
+        commentModal === 'approve'
+          ? 'อนุมัติสินเชื่อเรียบร้อย'
+          : commentModal === 'reject'
+            ? 'บันทึกการปฏิเสธเรียบร้อย'
+            : 'ส่งกลับไปแก้ไขเรียบร้อย'
+      )
       setCommentModal(null)
       window.location.href = '/'
     } finally {
@@ -160,7 +208,10 @@ export default function LoanDetailPage() {
 
   const attachments = (loan.loan_attachments ?? []) as LoanAttachment[]
   const canApprove = user.role === 'approver' && loan.status === 'รอตรวจสอบ'
-  const canEdit = user.role === 'sale' && loan.status === 'รอตรวจสอบ' && loan.sale_id === user.id
+  const canEdit =
+    user.role === 'sale' &&
+    (loan.status === 'รอตรวจสอบ' || loan.status === 'ส่งกลับไปแก้ไข') &&
+    loan.sale_id === user.id
 
   const loanTypeLabels: Record<string, string> = {
     personal_car: 'รถยนต์ส่วนบุคคล (รถยนต์นั่งไม่เกิน 7 ที่นั่ง)',
@@ -269,7 +320,13 @@ export default function LoanDetailPage() {
             <dd>
               <span
                 className={`font-bold ${
-                  loan.status === 'อนุมัติ' ? 'text-green-600' : loan.status === 'ปฏิเสธ' ? 'text-red-600' : 'text-amber-600'
+                  loan.status === 'อนุมัติ'
+                    ? 'text-green-600'
+                    : loan.status === 'ปฏิเสธ'
+                      ? 'text-red-600'
+                      : loan.status === 'ส่งกลับไปแก้ไข'
+                        ? 'text-orange-600'
+                        : 'text-amber-600'
                 }`}
               >
                 {loan.status ?? '—'}
@@ -289,6 +346,33 @@ export default function LoanDetailPage() {
             )}
           </dl>
         </div>
+
+        {revisionHistory.length > 0 && (
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">
+              ประวัติการส่งกลับไปแก้ไข
+            </h2>
+            <ul className="space-y-3">
+              {revisionHistory
+                .filter((h) => h.action === 'ส่งกลับไปแก้ไข')
+                .map((h) => (
+                  <li
+                    key={h.id}
+                    className="bg-amber-50/80 border border-amber-200 rounded-lg p-3 text-sm"
+                  >
+                    <p className="text-gray-600">
+                      <span className="font-medium text-gray-800">{h.staff_name ?? '—'}</span>
+                      {' · '}
+                      {formatDate(h.created_at)}
+                    </p>
+                    {h.comment != null && h.comment !== '' && (
+                      <p className="mt-1.5 text-gray-800 whitespace-pre-wrap">{h.comment}</p>
+                    )}
+                  </li>
+                ))}
+            </ul>
+          </div>
+        )}
 
         <div className="p-4 sm:p-6">
           <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">เอกสารแนบ</h2>
@@ -363,6 +447,13 @@ export default function LoanDetailPage() {
           </button>
           <button
             type="button"
+            onClick={handleReturnForRevision}
+            className="bg-amber-600 text-white px-4 py-3.5 sm:py-2 rounded-lg hover:bg-amber-700 min-h-[48px] font-medium touch-manipulation"
+          >
+            ส่งกลับไปแก้ไข
+          </button>
+          <button
+            type="button"
             onClick={handleReject}
             className="bg-gray-600 text-white px-4 py-3.5 sm:py-2 rounded-lg hover:bg-gray-700 min-h-[48px] font-medium touch-manipulation"
           >
@@ -372,27 +463,52 @@ export default function LoanDetailPage() {
       )}
 
       <Modal
-        title={commentModal === 'approve' ? 'อนุมัติสินเชื่อ' : 'ปฏิเสธสินเชื่อ'}
+        title={
+          commentModal === 'approve'
+            ? 'อนุมัติสินเชื่อ'
+            : commentModal === 'reject'
+              ? 'ปฏิเสธสินเชื่อ'
+              : 'ส่งกลับไปแก้ไข'
+        }
         open={commentModal != null}
         onOk={submitCommentModal}
         onCancel={() => setCommentModal(null)}
         confirmLoading={modalLoading}
-        okText={commentModal === 'approve' ? 'อนุมัติ' : 'ปฏิเสธ'}
+        okText={
+          commentModal === 'approve'
+            ? 'อนุมัติ'
+            : commentModal === 'reject'
+              ? 'ปฏิเสธ'
+              : 'ส่งกลับไปแก้ไข'
+        }
         cancelText="ยกเลิก"
         okButtonProps={{
           danger: commentModal === 'reject',
-          className: '!bg-red-700 hover:!bg-red-800 !border-red-700',
+          className:
+            commentModal === 'return_revision'
+              ? '!bg-amber-600 hover:!bg-amber-700 !border-amber-600'
+              : '!bg-red-700 hover:!bg-red-800 !border-red-700',
         }}
         width="min(100vw - 2rem, 480px)"
         centered
       >
         <div className="pt-2">
           <label className="block text-sm text-gray-600 mb-2">
-            {commentModal === 'approve' ? 'ความเห็นจากผู้อนุมัติ (ถ้ามี)' : 'เหตุผลการปฏิเสธ'}
+            {commentModal === 'approve'
+              ? 'ความเห็นจากผู้อนุมัติ (ถ้ามี)'
+              : commentModal === 'return_revision'
+                ? 'เหตุผลหรือข้อความส่งกลับให้ Sale แก้ไข (บังคับ)'
+                : 'เหตุผลการปฏิเสธ'}
           </label>
           <Input.TextArea
             rows={4}
-            placeholder={commentModal === 'approve' ? 'ไม่บังคับกรอก' : 'กรุณาระบุเหตุผล'}
+            placeholder={
+              commentModal === 'approve'
+                ? 'ไม่บังคับกรอก'
+                : commentModal === 'return_revision'
+                  ? 'กรุณาระบุรายการที่ต้องแก้ไข'
+                  : 'กรุณาระบุเหตุผล'
+            }
             value={comment}
             onChange={(e) => setComment(e.target.value)}
           />
@@ -419,7 +535,7 @@ export default function LoanDetailPage() {
         width="min(100vw - 2rem, 900px)"
         centered
         styles={{ body: { maxHeight: '80vh', overflow: 'auto' } }}
-        destroyOnClose
+        destroyOnHidden
       >
         {previewFile && (
           <div
