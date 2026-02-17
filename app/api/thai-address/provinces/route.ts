@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import provinces from '@/lib/data/thai_adddress/province.json'
+import provinces from '@/lib/data/thai_address/province.json'
 
 export async function GET() {
   const list = (provinces as { id: number; name_th: string; name_en: string }[])

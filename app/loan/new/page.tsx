@@ -11,6 +11,7 @@ import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
 import { generateNextLoanReference } from '@/lib/loanReference'
 import { ThaiAddressSelects, ProvinceSelect } from '@/app/components/ThaiAddressSelects'
+import { CarBrandSelect, CarModelSelect } from '@/app/components/ThaiCarSelects'
 import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
 
 export default function NewLoanPage() {
@@ -23,6 +24,7 @@ export default function NewLoanPage() {
   const [submitting, setSubmitting] = useState(false)
 
   const isLandTitle = loanType === 'land_title'
+  const isPersonalCar = loanType === 'personal_car'
 
   const watchedLoanAmount = Form.useWatch('loan_amount', form)
   const watchedTermMonths = Form.useWatch('term_months', form)
@@ -148,8 +150,16 @@ export default function NewLoanPage() {
         payload.land_deed_no = toStr(values.land_deed_no)
         payload.residence_details = toStr(values.residence_details)
       } else {
-        payload.car_brand = toStr(values.car_brand)
-        payload.car_model = toStr(values.car_model)
+        payload.car_brand = toStr(
+          values.car_brand === 'อื่นๆ'
+            ? (String((values as { car_brand_other?: string }).car_brand_other ?? '').trim() || 'อื่นๆ')
+            : values.car_brand
+        )
+        payload.car_model = toStr(
+          values.car_model === 'อื่นๆ'
+            ? (String((values as { car_model_other?: string }).car_model_other ?? '').trim() || 'อื่นๆ')
+            : values.car_model
+        )
         payload.car_type = toStr(values.car_type)
         payload.registration_date = toDate(values.registration_date)
         payload.license_plate = toStr(values.license_plate)
@@ -571,12 +581,21 @@ export default function NewLoanPage() {
               {sectionTitle('ข้อมูลรถ')}
             </div>
             <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
-              <Form.Item name="car_brand" label="ยี่ห้อรถ" rules={[{ required: !isLandTitle, message: 'กรุณากรอกยี่ห้อรถ' }]} className={formItemClass}>
-                <Input size="large" placeholder="เช่น Toyota, Isuzu" className="!rounded-lg w-full" />
-              </Form.Item>
-              <Form.Item name="car_model" label="รุ่นรถ" rules={[{ required: !isLandTitle, message: 'กรุณากรอกรุ่นรถ' }]} className={formItemClass}>
-                <Input size="large" placeholder="กรอกรุ่นรถ" className="!rounded-lg w-full" />
-              </Form.Item>
+              {isPersonalCar ? (
+                <>
+                  <CarBrandSelect name="car_brand" label="ยี่ห้อรถ" placeholder="เลือกยี่ห้อรถ" className={formItemClass} rules={[{ required: true, message: 'กรุณากรอกยี่ห้อรถ' }]} />
+                  <CarModelSelect name="car_model" label="รุ่นรถ" placeholder="เลือกรุ่นรถ (เลือกยี่ห้อก่อน)" className={formItemClass} rules={[{ required: true, message: 'กรุณากรอกรุ่นรถ' }]} />
+                </>
+              ) : (
+                <>
+                  <Form.Item name="car_brand" label="ยี่ห้อรถ" rules={[{ required: true, message: 'กรุณากรอกยี่ห้อรถ' }]} className={formItemClass}>
+                    <Input size="large" placeholder="กรอกยี่ห้อรถ" className="!rounded-lg w-full" />
+                  </Form.Item>
+                  <Form.Item name="car_model" label="รุ่นรถ" rules={[{ required: true, message: 'กรุณากรอกรุ่นรถ' }]} className={formItemClass}>
+                    <Input size="large" placeholder="กรอกรุ่นรถ" className="!rounded-lg w-full" />
+                  </Form.Item>
+                </>
+              )}
               <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
                 <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
               </Form.Item>

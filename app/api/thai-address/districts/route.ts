@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import districts from '@/lib/data/thai_adddress/district.json'
+import districts from '@/lib/data/thai_address/district.json'
 
 type District = { id: number; name_th: string; name_en: string; province_id: number }
 

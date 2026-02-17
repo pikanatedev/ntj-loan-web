@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import subDistricts from '@/lib/data/thai_adddress/sub_district.json'
+import subDistricts from '@/lib/data/thai_address/sub_district.json'
 
 type SubDistrict = { id: number; name_th: string; name_en: string; district_id: number; zip_code: number }
 
