@@ -12,6 +12,11 @@ import { getSafeStoragePath } from '@/lib/storage'
 import { generateNextLoanReference } from '@/lib/loanReference'
 import { ThaiAddressSelects, ProvinceSelect } from '@/app/components/ThaiAddressSelects'
 import { CarBrandSelect, CarModelSelect } from '@/app/components/ThaiCarSelects'
+import {
+  CommercialCarBrandSelect,
+  CommercialCarTypeSelect,
+  CommercialCarModelSelect,
+} from '@/app/components/CommercialCarSelects'
 import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
 
 export default function NewLoanPage() {
@@ -588,17 +593,16 @@ export default function NewLoanPage() {
                 </>
               ) : (
                 <>
-                  <Form.Item name="car_brand" label="ยี่ห้อรถ" rules={[{ required: true, message: 'กรุณากรอกยี่ห้อรถ' }]} className={formItemClass}>
-                    <Input size="large" placeholder="กรอกยี่ห้อรถ" className="!rounded-lg w-full" />
-                  </Form.Item>
-                  <Form.Item name="car_model" label="รุ่นรถ" rules={[{ required: true, message: 'กรุณากรอกรุ่นรถ' }]} className={formItemClass}>
-                    <Input size="large" placeholder="กรอกรุ่นรถ" className="!rounded-lg w-full" />
-                  </Form.Item>
+                  <CommercialCarBrandSelect name="car_brand" label="ยี่ห้อรถ" placeholder="เลือกยี่ห้อรถ (HINO, ISUZU)" className={formItemClass} rules={[{ required: true, message: 'กรุณากรอกยี่ห้อรถ' }]} />
+                  <CommercialCarTypeSelect name="car_type" label="ลักษณะรถ (ประเภทล้อ)" placeholder="เลือก 6 ล้อ หรือ 10 ล้อ" className={formItemClass} rules={[{ required: true, message: 'กรุณาเลือกประเภทล้อ' }]} />
+                  <CommercialCarModelSelect name="car_model" label="รุ่นรถ" placeholder="เลือกรุ่นรถ (เลือกยี่ห้อและประเภทล้อก่อน)" className={formItemClass} rules={[{ required: true, message: 'กรุณากรอกรุ่นรถ' }]} />
                 </>
               )}
-              <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
-                <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
-              </Form.Item>
+              {isPersonalCar && (
+                <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
+                  <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
+                </Form.Item>
+              )}
               <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
                 <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
               </Form.Item>
