@@ -10,7 +10,7 @@ import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
 import { ThaiAddressSelects, ProvinceSelect } from '@/app/components/ThaiAddressSelects'
-import { CarBrandSelect, CarModelSelect } from '@/app/components/ThaiCarSelects'
+import { CarBrandSelect, CarModelSelect, CarFuelTypeSelect } from '@/app/components/ThaiCarSelects'
 import {
   CommercialCarBrandSelect,
   CommercialCarTypeSelect,
@@ -142,6 +142,7 @@ export default function EditLoanPage() {
         car_brand: row.car_brand ?? undefined,
         car_model: row.car_model ?? undefined,
         car_type: row.car_type ?? undefined,
+        car_fuel_type: row.car_fuel_type ?? undefined,
         registration_date: row.registration_date ? dayjs(row.registration_date) : undefined,
         license_plate: row.license_plate ?? undefined,
         registration_province: row.registration_province ?? undefined,
@@ -311,6 +312,7 @@ export default function EditLoanPage() {
         updatePayload.car_brand = null
         updatePayload.car_model = null
         updatePayload.car_type = null
+        updatePayload.car_fuel_type = null
         updatePayload.registration_date = null
         updatePayload.license_plate = null
         updatePayload.registration_province = null
@@ -327,6 +329,11 @@ export default function EditLoanPage() {
             : values.car_model
         )
         updatePayload.car_type = toStr(values.car_type)
+        updatePayload.car_fuel_type = toStr(
+          values.car_fuel_type === 'อื่นๆ'
+            ? (String((values as { car_fuel_type_other?: string }).car_fuel_type_other ?? '').trim() || 'อื่นๆ')
+            : values.car_fuel_type
+        )
         updatePayload.registration_date = toDate(values.registration_date)
         updatePayload.license_plate = toStr(values.license_plate)
         updatePayload.registration_province = toStr(values.registration_province)
@@ -780,6 +787,7 @@ export default function EditLoanPage() {
                   <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
                 </Form.Item>
               )}
+              <CarFuelTypeSelect name="car_fuel_type" label="ประเภทเชื้อเพลิง" placeholder="เลือกประเภทเชื้อเพลิง" className={formItemClass} />
               <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
                 <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
               </Form.Item>

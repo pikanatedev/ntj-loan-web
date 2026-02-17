@@ -412,6 +412,8 @@ export default function LoanDetailPage() {
               <dd className="text-gray-900">{loan.car_model ?? '—'}</dd>
               <dt className="text-gray-500">ลักษณะรถ</dt>
               <dd className="text-gray-900">{loan.car_type ?? '—'}</dd>
+              <dt className="text-gray-500">ประเภทเชื้อเพลิง</dt>
+              <dd className="text-gray-900">{loan.car_fuel_type ?? '—'}</dd>
               <dt className="text-gray-500">วันที่จดทะเบียน</dt>
               <dd className="text-gray-900">{formatDate(loan.registration_date)}</dd>
               <dt className="text-gray-500">เลขทะเบียน</dt>

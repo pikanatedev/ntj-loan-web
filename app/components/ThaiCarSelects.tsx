@@ -189,3 +189,70 @@ export function CarModelSelect({
     </>
   )
 }
+
+const FUEL_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: 'ดีเซล', label: 'ดีเซล' },
+  { value: 'เบนซิน', label: 'เบนซิน' },
+  { value: 'แก๊ส', label: 'แก๊ส' },
+  { value: 'ไฮบริด', label: 'ไฮบริด' },
+  { value: 'ไฟฟ้า', label: 'ไฟฟ้า' },
+  { value: 'อื่นๆ', label: 'อื่นๆ' },
+]
+
+type CarFuelTypeSelectProps = {
+  name?: string
+  label?: string
+  placeholder?: string
+  className?: string
+  rules?: { required?: boolean; message?: string }[]
+  otherFieldName?: string
+}
+
+/** Select ประเภทเชื้อเพลิง (ดีเซล, เบนซิน, แก๊ส, ไฮบริด, ไฟฟ้า, อื่นๆ) */
+export function CarFuelTypeSelect({
+  name = 'car_fuel_type',
+  label = 'ประเภทเชื้อเพลิง',
+  placeholder = 'เลือกประเภทเชื้อเพลิง',
+  className = formItemClass,
+  rules,
+  otherFieldName = 'car_fuel_type_other',
+}: CarFuelTypeSelectProps) {
+  const form = Form.useFormInstance()
+  const fuelValue = Form.useWatch(name, form)
+  const showFuelOther = fuelValue === OTHER_VALUE
+
+  const onFuelChange = useCallback(
+    (v: string | undefined) => {
+      if (v !== OTHER_VALUE) form?.setFieldValue(otherFieldName, undefined)
+    },
+    [form, otherFieldName]
+  )
+
+  return (
+    <>
+      <Form.Item name={name} label={label} className={className} rules={rules}>
+        <Select
+          size="large"
+          placeholder={placeholder}
+          className="!rounded-lg w-full"
+          allowClear
+          showSearch
+          optionFilterProp="label"
+          filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
+          options={FUEL_TYPE_OPTIONS}
+          onChange={onFuelChange}
+        />
+      </Form.Item>
+      {showFuelOther && (
+        <Form.Item
+          name={otherFieldName}
+          label="ระบุประเภทเชื้อเพลิง (กรอกเอง)"
+          className={className}
+          rules={rules?.some((r) => r.required) ? [{ required: true, message: 'กรุณาระบุประเภทเชื้อเพลิง' }] : undefined}
+        >
+          <Input size="large" placeholder="กรอกประเภทเชื้อเพลิง" className="!rounded-lg w-full" />
+        </Form.Item>
+      )}
+    </>
+  )
+}

@@ -97,6 +97,8 @@ export type Loan = {
   car_brand?: string | null
   car_model?: string | null
   car_type?: string | null
+  /** ประเภทเชื้อเพลิง: ดีเซล, เบนซิน, แก๊ส, ไฮบริด, ไฟฟ้า, อื่นๆ */
+  car_fuel_type?: string | null
   registration_date?: string | null
   /** จังหวัดที่จดทะเบียนรถ (ตามป้ายทะเบียน) */
   registration_province?: string | null

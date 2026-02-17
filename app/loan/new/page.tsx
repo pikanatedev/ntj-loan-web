@@ -11,7 +11,7 @@ import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
 import { generateNextLoanReference } from '@/lib/loanReference'
 import { ThaiAddressSelects, ProvinceSelect } from '@/app/components/ThaiAddressSelects'
-import { CarBrandSelect, CarModelSelect } from '@/app/components/ThaiCarSelects'
+import { CarBrandSelect, CarModelSelect, CarFuelTypeSelect } from '@/app/components/ThaiCarSelects'
 import {
   CommercialCarBrandSelect,
   CommercialCarTypeSelect,
@@ -166,6 +166,11 @@ export default function NewLoanPage() {
             : values.car_model
         )
         payload.car_type = toStr(values.car_type)
+        payload.car_fuel_type = toStr(
+          values.car_fuel_type === 'อื่นๆ'
+            ? (String((values as { car_fuel_type_other?: string }).car_fuel_type_other ?? '').trim() || 'อื่นๆ')
+            : values.car_fuel_type
+        )
         payload.registration_date = toDate(values.registration_date)
         payload.license_plate = toStr(values.license_plate)
         payload.registration_province = toStr(values.registration_province)
@@ -603,6 +608,7 @@ export default function NewLoanPage() {
                   <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
                 </Form.Item>
               )}
+              <CarFuelTypeSelect name="car_fuel_type" label="ประเภทเชื้อเพลิง" placeholder="เลือกประเภทเชื้อเพลิง" className={formItemClass} />
               <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
                 <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
               </Form.Item>
