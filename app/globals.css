@@ -45,6 +45,26 @@ input, button, select, textarea,
   }
 }
 
+/* ปุ่มลิงก์ในหน้าแก้ไข/รายละเอียด ให้แสดงเป็นปุ่ม ไม่เป็นแค่ข้อความสีน้ำเงิน */
+a.edit-btn-amber {
+  background-color: #d97706 !important;
+  color: #fff !important;
+  text-decoration: none !important;
+}
+a.edit-btn-amber:hover {
+  background-color: #b45309 !important;
+  color: #fff !important;
+}
+a.edit-btn-gray {
+  background-color: #e5e7eb !important;
+  color: #1f2937 !important;
+  text-decoration: none !important;
+}
+a.edit-btn-gray:hover {
+  background-color: #d1d5db !important;
+  color: #1f2937 !important;
+}
+
 /* InputNumber ในฟอร์มให้เต็มความกว้าง (ช่องตัวเลข + addon บาท) */
 .ant-input-number {
   width: 100% !important;

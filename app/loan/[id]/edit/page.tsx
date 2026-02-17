@@ -339,18 +339,19 @@ export default function EditLoanPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/loan/${id}`}
-                  className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+                  className="edit-btn-amber px-4 py-3 sm:py-2 rounded-lg text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
                 >
                   กลับรายละเอียด
                 </Link>
                 <Link
                   href="/"
-                  className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+                  className="edit-btn-gray px-4 py-2.5 sm:py-2 rounded-lg font-medium min-h-[48px] inline-flex items-center justify-center touch-manipulation shrink-0"
                 >
                   หน้ารายการ
                 </Link>
               </div>
             </div>
+            <div className="space-y-6 sm:space-y-8">
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
             {sectionTitle('เลขที่อ้างอิงสินเชื่อ')}
@@ -562,7 +563,7 @@ export default function EditLoanPage() {
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('เอกสารแนบ')}
+            {sectionTitle('แนบเอกสาร')}
           </div>
           <div className="p-4 sm:p-6 space-y-6">
             {existingAttachments.length > 0 && (
@@ -719,11 +720,12 @@ export default function EditLoanPage() {
             size="large"
             block
             loading={submitting}
-            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20 !bg-amber-600 hover:!bg-amber-700 !border-amber-600"
+            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20"
           >
             {submitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
           </Button>
         </div>
+            </div>
           </>
         )}
       </div>
