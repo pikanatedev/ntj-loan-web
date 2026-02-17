@@ -172,3 +172,56 @@ export function ThaiAddressSelects({
     </>
   )
 }
+
+type ProvinceSelectProps = {
+  name: string
+  label?: string
+  placeholder?: string
+  className?: string
+}
+
+/** Select เดี่ยวสำหรับเลือกจังหวัด (ใช้กับข้อมูลทะเบียนรถ เป็นต้น) */
+export function ProvinceSelect({
+  name,
+  label = 'จังหวัด',
+  placeholder = 'เลือกจังหวัด',
+  className = formItemClass,
+}: ProvinceSelectProps) {
+  const [provinces, setProvinces] = useState<Province[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/thai-address/provinces')
+      .then((res) => res.json())
+      .then((data: Province[]) => {
+        if (!cancelled) setProvinces(data)
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const filterOption = useCallback((input: string, option?: { label?: string }) => {
+    return (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+  }, [])
+
+  return (
+    <Form.Item name={name} label={label} className={className}>
+      <Select
+        size="large"
+        placeholder={placeholder}
+        className="!rounded-lg w-full"
+        allowClear
+        showSearch
+        optionFilterProp="label"
+        filterOption={filterOption}
+        loading={loading}
+        options={provinces.map((p) => ({ value: p.name_th, label: p.name_th }))}
+      />
+    </Form.Item>
+  )
+}

@@ -37,6 +37,7 @@
 | `car_model` | text | รุ่นรถ |
 | `car_type` | text | ลักษณะรถ (เช่น 10 ล้อ, หัวลาก) |
 | `registration_date` | date | วันที่จดทะเบียนรถ |
+| `registration_province` | text | จังหวัดทะเบียนรถ (ตามป้ายทะเบียน) |
 | `car_details` | text | รายละเอียด/ตำหนิของรถ |
 | `license_plate` | text | เลขทะเบียนรถ |
 | `loan_type` | text | ประเภทสินเชื่อ: 'personal_car', 'commercial_vehicle', 'land_title' |

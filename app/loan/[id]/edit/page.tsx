@@ -9,7 +9,7 @@ import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@an
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
-import { ThaiAddressSelects } from '@/app/components/ThaiAddressSelects'
+import { ThaiAddressSelects, ProvinceSelect } from '@/app/components/ThaiAddressSelects'
 import type { StaffUser, Loan, LoanAttachment, LoanType, BorrowerInfo } from '@/lib/types'
 
 export default function EditLoanPage() {
@@ -138,6 +138,7 @@ export default function EditLoanPage() {
         car_type: row.car_type ?? undefined,
         registration_date: row.registration_date ? dayjs(row.registration_date) : undefined,
         license_plate: row.license_plate ?? undefined,
+        registration_province: row.registration_province ?? undefined,
         car_details: row.car_details ?? undefined,
         residence_address: row.residence_address ?? undefined,
         land_deed_no: row.land_deed_no ?? undefined,
@@ -306,6 +307,7 @@ export default function EditLoanPage() {
         updatePayload.car_type = null
         updatePayload.registration_date = null
         updatePayload.license_plate = null
+        updatePayload.registration_province = null
         updatePayload.car_details = null
       } else {
         updatePayload.car_brand = toStr(values.car_brand)
@@ -313,6 +315,7 @@ export default function EditLoanPage() {
         updatePayload.car_type = toStr(values.car_type)
         updatePayload.registration_date = toDate(values.registration_date)
         updatePayload.license_plate = toStr(values.license_plate)
+        updatePayload.registration_province = toStr(values.registration_province)
         updatePayload.car_details = toStr(values.car_details)
         updatePayload.residence_address = null
         updatePayload.land_deed_no = null
@@ -757,9 +760,10 @@ export default function EditLoanPage() {
               <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
                 <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
               </Form.Item>
-              <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: true, message: 'กรุณากรอกเลขทะเบียน' }]} className={formItemClassFull}>
+              <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: true, message: 'กรุณากรอกเลขทะเบียน' }]} className={formItemClass}>
                 <Input size="large" placeholder="กรอกเลขทะเบียน" className="!rounded-lg w-full" />
               </Form.Item>
+              <ProvinceSelect name="registration_province" label="จังหวัดทะเบียนรถ" placeholder="เลือกจังหวัด (ตามป้ายทะเบียน)" className={formItemClass} />
               <Form.Item name="car_details" label="รายละเอียด/ตำหนิของรถ" className={formItemClassFull}>
                 <Input.TextArea rows={3} placeholder="ระบุรายละเอียดหรือตำหนิ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
               </Form.Item>

@@ -416,6 +416,8 @@ export default function LoanDetailPage() {
               <dd className="text-gray-900">{formatDate(loan.registration_date)}</dd>
               <dt className="text-gray-500">เลขทะเบียน</dt>
               <dd className="text-gray-900">{loan.license_plate ?? '—'}</dd>
+              <dt className="text-gray-500">จังหวัดทะเบียนรถ</dt>
+              <dd className="text-gray-900">{loan.registration_province ?? '—'}</dd>
               <dt className="text-gray-500">รายละเอียด/ตำหนิ</dt>
               <dd className="text-gray-900 col-span-2">{loan.car_details ?? '—'}</dd>
             </dl>

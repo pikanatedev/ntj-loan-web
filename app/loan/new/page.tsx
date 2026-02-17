@@ -10,7 +10,7 @@ import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import { getSafeStoragePath } from '@/lib/storage'
 import { generateNextLoanReference } from '@/lib/loanReference'
-import { ThaiAddressSelects } from '@/app/components/ThaiAddressSelects'
+import { ThaiAddressSelects, ProvinceSelect } from '@/app/components/ThaiAddressSelects'
 import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
 
 export default function NewLoanPage() {
@@ -153,6 +153,7 @@ export default function NewLoanPage() {
         payload.car_type = toStr(values.car_type)
         payload.registration_date = toDate(values.registration_date)
         payload.license_plate = toStr(values.license_plate)
+        payload.registration_province = toStr(values.registration_province)
         payload.car_details = toStr(values.car_details)
       }
 
@@ -582,9 +583,10 @@ export default function NewLoanPage() {
               <Form.Item name="registration_date" label="วันที่จดทะเบียนรถ" className={formItemClass}>
                 <DatePicker className="w-full !rounded-lg" format={DATE_DISPLAY_FORMAT} size="large" placeholder="เลือกวันที่" />
               </Form.Item>
-              <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: !isLandTitle, message: 'กรุณากรอกเลขทะเบียน' }]} className={formItemClassFull}>
+              <Form.Item name="license_plate" label="เลขทะเบียนรถ" rules={[{ required: !isLandTitle, message: 'กรุณากรอกเลขทะเบียน' }]} className={formItemClass}>
                 <Input size="large" placeholder="กรอกเลขทะเบียน" className="!rounded-lg w-full" />
               </Form.Item>
+              <ProvinceSelect name="registration_province" label="จังหวัดทะเบียนรถ" placeholder="เลือกจังหวัด (ตามป้ายทะเบียน)" className={formItemClass} />
               <Form.Item name="car_details" label="รายละเอียด/ตำหนิของรถ" className={formItemClassFull}>
                 <Input.TextArea rows={3} placeholder="ระบุรายละเอียดหรือตำหนิ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
               </Form.Item>
