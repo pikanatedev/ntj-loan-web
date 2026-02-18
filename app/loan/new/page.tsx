@@ -53,6 +53,25 @@ export default function NewLoanPage() {
     setFileListByType({})
   }, [loanType])
 
+  const prevLoanTypeRef = useRef<LoanType | null>(null)
+  useEffect(() => {
+    const prev = prevLoanTypeRef.current
+    prevLoanTypeRef.current = loanType
+    if (prev == null) return
+    const wasVehicle = prev === 'personal_car' || prev === 'commercial_vehicle'
+    const isVehicle = loanType === 'personal_car' || loanType === 'commercial_vehicle'
+    if (wasVehicle && isVehicle && prev !== loanType) {
+      form.setFieldsValue({
+        car_brand: undefined,
+        car_model: undefined,
+        car_type: undefined,
+        car_fuel_type: undefined,
+        car_brand_other: undefined,
+        car_model_other: undefined,
+      })
+    }
+  }, [loanType, form])
+
   useEffect(() => {
     const stored = localStorage.getItem('loan_user')
     if (!stored) {
@@ -669,7 +688,7 @@ export default function NewLoanPage() {
               )}
               {isPersonalCar && (
                 <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
-                  <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
+                  <Input size="large" placeholder="เช่น รถกระบะ รถเก๋ง" className="!rounded-lg w-full" />
                 </Form.Item>
               )}
               <CarFuelTypeSelect name="car_fuel_type" label="ประเภทเชื้อเพลิง" placeholder="เลือกประเภทเชื้อเพลิง" className={formItemClass} />

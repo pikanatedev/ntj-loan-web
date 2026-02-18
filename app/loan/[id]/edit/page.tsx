@@ -914,7 +914,7 @@ export default function EditLoanPage() {
               )}
               {isPersonalCar && (
                 <Form.Item name="car_type" label="ลักษณะรถ" className={formItemClass}>
-                  <Input size="large" placeholder="เช่น 10 ล้อ, หัวลาก" className="!rounded-lg w-full" />
+                  <Input size="large" placeholder="เช่น รถกระบะ รถเก๋ง" className="!rounded-lg w-full" />
                 </Form.Item>
               )}
               <CarFuelTypeSelect name="car_fuel_type" label="ประเภทเชื้อเพลิง" placeholder="เลือกประเภทเชื้อเพลิง" className={formItemClass} />
