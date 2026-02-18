@@ -25,6 +25,7 @@ import {
   DOC_ITEMS_VEHICLE,
   DOC_ITEMS_LAND,
   DOC_ITEMS_LOAN,
+  DOC_ITEMS_OTHER,
   type DocumentChecklistItem,
 } from '@/lib/data/documentChecklist'
 
@@ -1097,38 +1098,14 @@ export default function EditLoanPage() {
           {renderEditDocUpload(DOC_ITEMS_LOAN)}
         </section>
 
-        {(existingByType['_other']?.length ?? 0) > 0 && (
-          <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-            <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-              {sectionTitle('เอกสารอื่นๆ')}
-            </div>
-            <div className="p-4 sm:p-6">
-              <div className="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
-                <p className="text-sm font-medium text-amber-800 mb-3">เอกสารอื่นๆ (ไม่มีประเภท)</p>
-                <div className="flex flex-wrap gap-2">
-                  {existingByType['_other'].map((att) => {
-                    const thumbUrl = existingFileUrls[att.file_path]
-                    const isImg = isImage(att.file_name)
-                    const isPdfFile = isPdf(att.file_name)
-                    return (
-                      <div key={att.id} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
-                        <button type="button" onClick={() => removeExistingAttachment(att.id)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
-                          <CloseOutlined />
-                        </button>
-                        {isImg && thumbUrl ? <img src={thumbUrl} alt={att.file_name} className="w-full h-full object-cover" /> : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
-                            {isPdfFile ? <FilePdfOutlined style={{ fontSize: 20, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 20 }} />}
-                            <span className="text-[10px] truncate w-full text-center" title={att.file_name}>{att.file_name}</span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+            {sectionTitle('เอกสารอื่นๆ')}
+          </div>
+          <div className="p-4 sm:p-6">
+            {renderEditDocUpload(DOC_ITEMS_OTHER)}
+          </div>
+        </section>
 
             </div>
           </div>

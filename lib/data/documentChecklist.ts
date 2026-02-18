@@ -75,6 +75,10 @@ export const DOCUMENT_SECTIONS: DocumentSection[] = [
       { key: 'closing_balance_letter', label: 'หนังสือยอดปิดบัญชีเดิม (กรณีรีไฟแนนซ์)' },
     ],
   },
+  {
+    cardTitle: 'เอกสารอื่นๆ',
+    items: [{ key: '_other', label: 'เอกสารอื่นๆ' }],
+  },
 ]
 
 /** รายการเอกสาร Card 4 อาชีพและรายได้ */
@@ -85,6 +89,8 @@ export const DOC_ITEMS_VEHICLE: DocumentChecklistItem[] = DOCUMENT_SECTIONS[5].i
 export const DOC_ITEMS_LAND: DocumentChecklistItem[] = DOCUMENT_SECTIONS[6].items
 /** รายการเอกสาร Card ข้อมูลสินเชื่อ */
 export const DOC_ITEMS_LOAN: DocumentChecklistItem[] = DOCUMENT_SECTIONS[7].items
+/** รายการเอกสาร Card เอกสารอื่นๆ */
+export const DOC_ITEMS_OTHER: DocumentChecklistItem[] = DOCUMENT_SECTIONS[8].items
 
 /** ดึง sections ที่มีรายการแนบ และตรงกับ loan_type */
 export function getDocumentSections(loanType: string): DocumentSection[] {

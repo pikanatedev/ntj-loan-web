@@ -18,7 +18,7 @@ import {
   CommercialCarModelSelect,
 } from '@/app/components/CommercialCarSelects'
 import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
-import { getDocItemsForCard, getAllDocumentKeys, DOC_ITEMS_BORROWER_PERSONAL } from '@/lib/data/documentChecklist'
+import { getDocItemsForCard, getAllDocumentKeys, DOC_ITEMS_BORROWER_PERSONAL, DOC_ITEMS_OTHER } from '@/lib/data/documentChecklist'
 
 export default function NewLoanPage() {
   const { message } = App.useApp()
@@ -859,6 +859,16 @@ export default function NewLoanPage() {
               />
             </Form.Item>
             {getDocItemsForCard('ข้อมูลสินเชื่อ', loanType).map(docUploadField)}
+          </div>
+        </section>
+
+        {/* เอกสารอื่นๆ */}
+        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+            {sectionTitle('เอกสารอื่นๆ')}
+          </div>
+          <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
+            {DOC_ITEMS_OTHER.map(docUploadField)}
           </div>
         </section>
       </Form>
