@@ -85,7 +85,13 @@ export function CommercialCarBrandSelect({
           optionFilterProp="label"
           filterOption={filterOption}
           loading={loading}
-          options={brands.map((b) => ({ value: b.name_th, label: b.name_th }))}
+          options={[
+            ...brands.map((b) => ({ value: b.name_th, label: b.name_th })),
+            ...(!brands.some((b) => b.name_th === OTHER_VALUE) ? [{ value: OTHER_VALUE, label: OTHER_VALUE }] : []),
+            ...(brandValue && brandValue !== OTHER_VALUE && !brands.some((b) => b.name_th === brandValue)
+              ? [{ value: brandValue, label: brandValue }]
+              : []),
+          ]}
           onChange={onBrandChange}
         />
       </Form.Item>
@@ -228,7 +234,8 @@ export function CommercialCarModelSelect({
           loading={loading}
           options={[
             ...models.map((m) => ({ value: m.name_th, label: m.name_th })),
-            ...(modelValue && !models.some((m) => m.name_th === modelValue)
+            ...(!models.some((m) => m.name_th === OTHER_VALUE) ? [{ value: OTHER_VALUE, label: OTHER_VALUE }] : []),
+            ...(modelValue && modelValue !== OTHER_VALUE && !models.some((m) => m.name_th === modelValue)
               ? [{ value: modelValue, label: modelValue }]
               : []),
           ]}
