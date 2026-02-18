@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { message, Input, Select, Pagination, DatePicker, Button } from 'antd'
+import { App, Input, Select, Pagination, DatePicker, Button } from 'antd'
 import type { Dayjs } from 'dayjs'
 import { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
 import { supabase } from '@/lib/supabaseClient'
@@ -60,6 +60,7 @@ function matchDateRange(submissionDate: string | null | undefined, range: [Dayjs
 }
 
 export default function ListPage() {
+  const { message } = App.useApp()
   const [user, setUser] = useState<StaffUser | null>(null)
   const [pin, setPin] = useState('')
   const [loans, setLoans] = useState<Loan[]>([])
@@ -180,7 +181,7 @@ export default function ListPage() {
         {user.role === 'sale' && (
           <Link
             href="/loan/new"
-            className="bg-red-700 text-white px-4 py-3 sm:py-2 rounded-lg hover:bg-red-800 text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
+            className="edit-btn-red px-4 py-3 sm:py-2 rounded-lg text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
           >
             สร้างแบบฟอร์มใหม่
           </Link>
@@ -310,7 +311,7 @@ export default function ListPage() {
               </div>
               <Link
                 href={`/loan/${loan.id}`}
-                className="bg-red-700 text-white px-4 py-3 sm:py-2 rounded-lg hover:bg-red-800 text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
+                className="edit-btn-red px-4 py-3 sm:py-2 rounded-lg text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
               >
                 ดูรายละเอียด
               </Link>

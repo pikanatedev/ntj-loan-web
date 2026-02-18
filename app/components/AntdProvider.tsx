@@ -1,7 +1,7 @@
 'use client'
 
 import '@/lib/dayjs'
-import { ConfigProvider } from 'antd'
+import { App, ConfigProvider } from 'antd'
 import type { Locale } from 'antd/es/locale'
 import thTH from 'antd/locale/th_TH'
 
@@ -25,7 +25,7 @@ const locale = {
 export function AntdProvider({ children }: { children: React.ReactNode }) {
   return (
     <ConfigProvider locale={locale} theme={theme}>
-      {children}
+      <App>{children}</App>
     </ConfigProvider>
   )
 }

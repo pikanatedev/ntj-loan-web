@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Modal, Input, message, Spin } from 'antd'
+import { App, Modal, Input, Spin } from 'antd'
 import { FilePdfOutlined, FileOutlined } from '@ant-design/icons'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import type { StaffUser, Loan, LoanAttachment, LoanApprovalHistoryEntry, BorrowerInfo } from '@/lib/types'
@@ -118,6 +118,7 @@ function BorrowerInfoGrid({
 }
 
 export default function LoanDetailPage() {
+  const { message } = App.useApp()
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
@@ -293,7 +294,7 @@ export default function LoanDetailPage() {
         <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้</p>
         <Link
           href="/"
-          className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium touch-manipulation"
+          className="edit-btn-gray mt-3 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium touch-manipulation"
         >
           กลับ
         </Link>
@@ -307,7 +308,7 @@ export default function LoanDetailPage() {
         <p className="text-gray-500 text-sm sm:text-base">ไม่มีสิทธิ์ดูรายการนี้</p>
         <Link
           href="/"
-          className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium touch-manipulation"
+          className="edit-btn-gray mt-3 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium touch-manipulation"
         >
           กลับ
         </Link>
@@ -408,14 +409,14 @@ export default function LoanDetailPage() {
           {canEdit && (
             <Link
               href={`/loan/${id}/edit`}
-              className="bg-amber-600 text-white px-4 py-3 sm:py-2 rounded-lg hover:bg-amber-700 text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
+              className="edit-btn-amber px-4 py-3 sm:py-2 rounded-lg text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
             >
               แก้ไข
             </Link>
           )}
           <Link
             href="/"
-            className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+            className="edit-btn-gray inline-flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg font-medium min-h-[48px] touch-manipulation shrink-0"
           >
             กลับ
           </Link>

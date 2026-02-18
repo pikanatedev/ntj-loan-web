@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { Form, Input, InputNumber, DatePicker, Upload, Button, message, Select, Radio } from 'antd'
+import { App, Form, Input, InputNumber, DatePicker, Upload, Button, Select, Radio } from 'antd'
 import type { UploadFile } from 'antd'
 import { InboxOutlined, FilePdfOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
@@ -118,6 +118,7 @@ function loanToInitialValues(row: Loan) {
 }
 
 export default function EditLoanPage() {
+  const { message } = App.useApp()
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
@@ -591,7 +592,7 @@ export default function EditLoanPage() {
           <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
           <Link
             href="/"
-            className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation"
+            className="edit-btn-gray mt-3 inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-medium min-h-[48px] touch-manipulation"
           >
             กลับหน้ารายการ
           </Link>

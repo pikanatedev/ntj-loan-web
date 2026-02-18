@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Form, Input, InputNumber, DatePicker, Upload, Button, message, Select, Radio } from 'antd'
+import { App, Form, Input, InputNumber, DatePicker, Upload, Button, Select, Radio } from 'antd'
 import type { UploadFile } from 'antd'
 import { InboxOutlined, FileOutlined, CloseOutlined } from '@ant-design/icons'
 import dayjs, { DATE_DISPLAY_FORMAT } from '@/lib/dayjs'
@@ -21,6 +21,7 @@ import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
 import { getDocItemsForCard, getAllDocumentKeys, DOC_ITEMS_BORROWER_PERSONAL } from '@/lib/data/documentChecklist'
 
 export default function NewLoanPage() {
+  const { message } = App.useApp()
   const router = useRouter()
   const [user, setUser] = useState<StaffUser | null>(null)
   const [form] = Form.useForm()
@@ -374,7 +375,7 @@ export default function NewLoanPage() {
         <h1 className="text-xl sm:text-2xl font-bold text-red-700">แบบฟอร์มเสนอสินเชื่อใหม่</h1>
         <Link
           href="/"
-          className="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 sm:py-2 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation shrink-0"
+          className="edit-btn-gray inline-flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg font-medium min-h-[48px] touch-manipulation shrink-0"
         >
           กลับหน้ารายการ
         </Link>
