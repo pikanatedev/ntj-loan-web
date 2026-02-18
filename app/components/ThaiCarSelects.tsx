@@ -171,7 +171,12 @@ export function CarModelSelect({
           optionFilterProp="label"
           filterOption={filterOption}
           loading={loading}
-          options={models.map((m) => ({ value: m.name_th, label: m.name_th }))}
+          options={[
+            ...models.map((m) => ({ value: m.name_th, label: m.name_th })),
+            ...(modelValue && !models.some((m) => m.name_th === modelValue)
+              ? [{ value: modelValue, label: modelValue }]
+              : []),
+          ]}
           disabled={!brandName}
           onChange={onModelChange}
         />

@@ -6,6 +6,7 @@ import { Modal, Input, message, Spin } from 'antd'
 import { FilePdfOutlined, FileOutlined } from '@ant-design/icons'
 import { supabase, STORAGE_BUCKET } from '@/lib/supabaseClient'
 import type { StaffUser, Loan, LoanAttachment, LoanApprovalHistoryEntry, BorrowerInfo } from '@/lib/types'
+import { getDocumentChecklist } from '@/lib/data/documentChecklist'
 import { formatNum, formatDate } from '@/lib/types'
 
 const BORROWER_INFO_LABELS: Record<keyof BorrowerInfo, string> = {
@@ -308,6 +309,17 @@ export default function LoanDetailPage() {
   }
 
   const attachments = (loan.loan_attachments ?? []) as LoanAttachment[]
+  const loanType = loan.loan_type ?? 'personal_car'
+  const documentChecklist = getDocumentChecklist(loanType)
+  const attachmentsByType = (() => {
+    const map: Record<string, LoanAttachment[]> = {}
+    attachments.forEach((att) => {
+      const key = att.document_type ?? '_other'
+      if (!map[key]) map[key] = []
+      map[key].push(att)
+    })
+    return map
+  })()
   const canApprove = user.role === 'approver' && loan.status === 'รอตรวจสอบ'
   const canEdit =
     user.role === 'sale' &&
@@ -499,64 +511,82 @@ export default function LoanDetailPage() {
           </div>
         )}
 
-        <div className="p-4 sm:p-6">
-          <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">เอกสารแนบ</h2>
+        <div className="p-4 sm:p-6 space-y-6">
+          <h2 className="font-bold text-red-700 mb-3 sm:mb-4 text-sm sm:text-base">เช็คลิสต์เอกสารสินเชื่อ</h2>
           {attachments.length === 0 ? (
             <p className="text-gray-500 text-sm">ไม่มีไฟล์แนบ</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-              {attachments.map((att) => {
-                const url = fileUrls[att.file_path]
-                const isImg = isImage(att.file_name)
-                const isPdfFile = isPdf(att.file_name)
-                const openPreview = () => {
-                  if (url) {
-                    setPreviewFile({ url, fileName: att.file_name })
-                    setPreviewLoading(true)
-                  }
-                }
+            <>
+              {documentChecklist.map((item) => {
+                const list = attachmentsByType[item.key] ?? []
+                if (list.length === 0) return null
                 return (
-                  <button
-                    key={att.id}
-                    type="button"
-                    onClick={openPreview}
-                    disabled={!url}
-                    className="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden text-left hover:border-red-300 hover:bg-red-50/30 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none"
-                  >
-                    {!url ? (
-                      <div className="aspect-square flex flex-col items-center justify-center text-gray-400 p-3">
-                        <Spin size="small" />
-                        <span className="text-xs mt-2">กำลังโหลด...</span>
-                      </div>
-                    ) : isImg ? (
-                      <div className="aspect-square bg-gray-100">
-                        <img
-                          src={url}
-                          alt={att.file_name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
-                        {isPdfFile ? (
-                          <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
-                        ) : (
-                          <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />
-                        )}
-                        <span className="text-xs mt-2 truncate w-full text-center" title={att.file_name}>
-                          {isPdfFile ? 'PDF' : att.file_name}
-                        </span>
-                      </div>
-                    )}
-                    {url && (
-                      <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
-                        {att.file_name}
-                      </p>
-                    )}
-                  </button>
+                  <div key={item.key}>
+                    <h3 className="text-gray-700 font-medium text-sm mb-2">☑ {item.label}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                      {list.map((att) => {
+                        const url = fileUrls[att.file_path]
+                        const isImg = isImage(att.file_name)
+                        const isPdfFile = isPdf(att.file_name)
+                        const openPreview = () => {
+                          if (url) {
+                            setPreviewFile({ url, fileName: att.file_name })
+                            setPreviewLoading(true)
+                          }
+                        }
+                        return (
+                          <button
+                            key={att.id}
+                            type="button"
+                            onClick={openPreview}
+                            disabled={!url}
+                            className="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden text-left hover:border-red-300 hover:bg-red-50/30 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none"
+                          >
+                            {!url ? (
+                              <div className="aspect-square flex flex-col items-center justify-center text-gray-400 p-3">
+                                <Spin size="small" />
+                                <span className="text-xs mt-2">กำลังโหลด...</span>
+                              </div>
+                            ) : isImg ? (
+                              <div className="aspect-square bg-gray-100">
+                                <img src={url} alt={att.file_name} className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
+                                {isPdfFile ? <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />}
+                                <span className="text-xs mt-2 truncate w-full text-center" title={att.file_name}>{isPdfFile ? 'PDF' : att.file_name}</span>
+                              </div>
+                            )}
+                            {url && (
+                              <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>{att.file_name}</p>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 )
               })}
-            </div>
+              {(attachmentsByType['_other']?.length ?? 0) > 0 && (
+                <div>
+                  <h3 className="text-gray-600 font-medium text-sm mb-2">เอกสารอื่นๆ</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+                    {attachmentsByType['_other'].map((att) => {
+                      const url = fileUrls[att.file_path]
+                      const isImg = isImage(att.file_name)
+                      const isPdfFile = isPdf(att.file_name)
+                      const openPreview = () => { if (url) { setPreviewFile({ url, fileName: att.file_name }); setPreviewLoading(true) } }
+                      return (
+                        <button key={att.id} type="button" onClick={openPreview} disabled={!url} className="rounded-xl border border-gray-200 bg-gray-50 overflow-hidden text-left hover:border-red-300 hover:bg-red-50/30 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none">
+                          {!url ? <div className="aspect-square flex flex-col items-center justify-center text-gray-400 p-3"><Spin size="small" /><span className="text-xs mt-2">กำลังโหลด...</span></div> : isImg ? <div className="aspect-square bg-gray-100"><img src={url} alt={att.file_name} className="w-full h-full object-cover" /></div> : <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">{isPdfFile ? <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />}<span className="text-xs mt-2 truncate w-full text-center" title={att.file_name}>{isPdfFile ? 'PDF' : att.file_name}</span></div>}
+                          {url && <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>{att.file_name}</p>}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

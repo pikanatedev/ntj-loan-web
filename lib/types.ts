@@ -1,6 +1,13 @@
 export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' | 'manager' }
 
-export type LoanAttachment = { id: string; loan_id: string; file_path: string; file_name: string }
+export type LoanAttachment = {
+  id: string
+  loan_id: string
+  file_path: string
+  file_name: string
+  /** รหัสประเภทเอกสารตามเช็คลิสต์ (เช่น vehicle_book_original, land_deed_copy) */
+  document_type?: string | null
+}
 
 /** ประวัติการดำเนินการของผู้อนุมัติ (ส่งกลับไปแก้ไข, อนุมัติ, ปฏิเสธ) */
 export type LoanApprovalHistoryEntry = {

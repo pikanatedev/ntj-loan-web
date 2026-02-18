@@ -80,6 +80,7 @@
 | `loan_id` | uuid | Foreign Key อ้างอิงถึง ID ในตาราง loans |
 | `file_path` | text | ที่อยู่ไฟล์ใน Supabase Storage |
 | `file_name` | text | ชื่อไฟล์ต้นฉบับ |
+| `document_type` | text | รหัสประเภทเอกสารตามเช็คลิสต์ (เช่น vehicle_book_original, land_deed_copy) — เพิ่มด้วย `scripts/add_loan_attachments_document_type.sql` |
 
 ---
 

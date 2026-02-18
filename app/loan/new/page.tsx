@@ -18,6 +18,7 @@ import {
   CommercialCarModelSelect,
 } from '@/app/components/CommercialCarSelects'
 import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
+import { getDocumentChecklist } from '@/lib/data/documentChecklist'
 
 export default function NewLoanPage() {
   const router = useRouter()
@@ -25,11 +26,13 @@ export default function NewLoanPage() {
   const [form] = Form.useForm()
   const watchedLoanType = Form.useWatch<LoanType>('loan_type', form)
   const loanType = watchedLoanType ?? 'personal_car'
-  const [fileList, setFileList] = useState<UploadFile[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   const isLandTitle = loanType === 'land_title'
   const isPersonalCar = loanType === 'personal_car'
+  const documentChecklist = getDocumentChecklist(loanType)
+  const [fileListByType, setFileListByType] = useState<Record<string, UploadFile[]>>({})
+  const allFiles = Object.values(fileListByType).flat()
 
   const watchedLoanAmount = Form.useWatch('loan_amount', form)
   const watchedTermMonths = Form.useWatch('term_months', form)
@@ -46,6 +49,10 @@ export default function NewLoanPage() {
     const totalRepay = principal + totalInterest
     return totalRepay / months
   })()
+
+  useEffect(() => {
+    setFileListByType({})
+  }, [loanType])
 
   useEffect(() => {
     const stored = localStorage.getItem('loan_user')
@@ -192,19 +199,22 @@ export default function NewLoanPage() {
         .eq('id', loan.id)
       if (updateRefError) throw updateRefError
 
-      const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
-      const files = rawFiles as File[]
-      for (const file of files) {
-        const path = getSafeStoragePath(loan.id, file)
-        const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file)
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError)
-          throw new Error(uploadError.message === 'Bucket not found' ? 'ไม่พบ Storage bucket กรุณาสร้าง bucket ใน Supabase Dashboard' : uploadError.message)
+      for (const item of documentChecklist) {
+        const list = fileListByType[item.key] ?? []
+        const rawFiles = list.map((f) => f.originFileObj).filter(Boolean)
+        const files = rawFiles as File[]
+        for (const file of files) {
+          const path = getSafeStoragePath(loan.id, file)
+          const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file)
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError)
+            throw new Error(uploadError.message === 'Bucket not found' ? 'ไม่พบ Storage bucket กรุณาสร้าง bucket ใน Supabase Dashboard' : uploadError.message)
+          }
+          const { error: insertError } = await supabase
+            .from('loan_attachments')
+            .insert([{ loan_id: loan.id, file_path: path, file_name: file.name, document_type: item.key }])
+          if (insertError) throw insertError
         }
-        const { error: insertError } = await supabase
-          .from('loan_attachments')
-          .insert([{ loan_id: loan.id, file_path: path, file_name: file.name }])
-        if (insertError) throw insertError
       }
 
       message.success('ส่งสินเชื่อสำเร็จ!')
@@ -217,8 +227,8 @@ export default function NewLoanPage() {
     }
   }
 
-  const normFile = (e: { fileList: UploadFile[] }) => {
-    setFileList(e.fileList)
+  const normFile = (documentType: string) => (e: { fileList: UploadFile[] }) => {
+    setFileListByType((prev) => ({ ...prev, [documentType]: e.fileList }))
   }
 
   const isImageFile = (file: UploadFile) => {
@@ -233,9 +243,10 @@ export default function NewLoanPage() {
   const thumbUrlsRef = useRef<Record<string, string>>({})
 
   useEffect(() => {
-    const uids = new Set(fileList.map((f) => f.uid))
+    const files = Object.values(fileListByType).flat()
+    const uids = new Set(files.map((f) => f.uid))
     const next: Record<string, string> = {}
-    fileList.forEach((file) => {
+    files.forEach((file) => {
       if (!isImageFile(file) || !file.originFileObj) return
       const url = thumbUrlsRef.current[file.uid] ?? URL.createObjectURL(file.originFileObj)
       next[file.uid] = url
@@ -245,7 +256,7 @@ export default function NewLoanPage() {
     })
     thumbUrlsRef.current = next
     setThumbUrls(next)
-  }, [fileList])
+  }, [fileListByType])
 
   useEffect(() => {
     return () => {
@@ -254,8 +265,17 @@ export default function NewLoanPage() {
     }
   }, [])
 
-  const removeFile = (uid: string) => {
-    setFileList((prev) => prev.filter((f) => f.uid !== uid))
+  const removeFile = (documentType: string, uid: string) => {
+    setFileListByType((prev) => {
+      const list = prev[documentType] ?? []
+      const next = list.filter((f) => f.uid !== uid)
+      if (next.length === 0) {
+        const rest = { ...prev }
+        delete rest[documentType]
+        return rest
+      }
+      return { ...prev, [documentType]: next }
+    })
   }
 
   const idCardRules = [
@@ -746,79 +766,72 @@ export default function NewLoanPage() {
           </div>
         </section>
 
-        {/* แนบเอกสาร */}
+        {/* แนบเอกสารตามเช็คลิสต์ */}
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('แนบเอกสาร')}
+            {sectionTitle('เช็คลิสต์เอกสารสินเชื่อ')}
           </div>
-          <div className="p-4 sm:p-6">
-            <Form.Item
-              label={<span className="text-gray-700 font-medium">เลือกไฟล์ (ทีละไฟล์หรือหลายไฟล์)</span>}
-              className="mb-0"
-            >
-              <Upload.Dragger
-                multiple
-                fileList={fileList}
-                onChange={normFile}
-                beforeUpload={() => false}
-                maxCount={999}
-                showUploadList={false}
-                className="!rounded-xl !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-gray-50/50 hover:!bg-red-50/30 [&.ant-upload-drag]:!rounded-xl"
-              >
-                <p className="ant-upload-drag-icon mb-2">
-                  <InboxOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
-                </p>
-                <p className="ant-upload-text text-gray-700 font-medium">คลิกหรือลากไฟล์มาวางที่นี่</p>
-                <p className="ant-upload-hint text-gray-500 text-sm mt-1">รายการไฟล์จะแสดงด้านล่าง (รูปแสดงเป็น thumbnail)</p>
-              </Upload.Dragger>
-            {fileList.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 font-medium mb-3">ไฟล์ที่แนบแล้ว ({fileList.length})</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {fileList.map((file) => {
-                    const isImg = isImageFile(file)
-                    const thumbUrl = isImg ? thumbUrls[file.uid] : null
-                    return (
-                      <div
-                        key={file.uid}
-                        className="relative rounded-xl border border-gray-200 bg-gray-50 overflow-hidden group"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => removeFile(file.uid)}
-                          className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
-                          aria-label="ลบไฟล์"
-                        >
-                          <CloseOutlined className="!text-xs" />
-                        </button>
-                        {thumbUrl ? (
-                          <div className="aspect-square bg-gray-100">
-                            <img
-                              src={thumbUrl}
-                              alt={file.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div className="aspect-square flex flex-col items-center justify-center text-gray-400 p-2">
-                            <FileOutlined style={{ fontSize: 28 }} />
-                            <span className="text-xs mt-1 truncate w-full text-center" title={file.name}>
-                              {file.name}
-                            </span>
-                          </div>
-                        )}
-                        {isImg && (
-                          <p className="text-xs text-gray-500 truncate px-2 py-1.5" title={file.name}>
-                            {file.name}
-                          </p>
-                        )}
+          <div className="p-4 sm:p-6 space-y-6">
+            <p className="text-gray-600 text-sm -mt-2">
+              {isLandTitle ? 'จำนองโฉนดที่ดิน' : 'จำนำเล่มทะเบียนรถ'} — อัปโหลดเอกสารตามรายการด้านล่าง
+            </p>
+            {documentChecklist.map((item) => {
+              const list = fileListByType[item.key] ?? []
+              return (
+                <div key={item.key} className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+                  <Form.Item
+                    label={<span className="text-gray-700 font-medium">☐ {item.label}</span>}
+                    className="mb-0"
+                  >
+                    <Upload.Dragger
+                      multiple
+                      fileList={list}
+                      onChange={normFile(item.key)}
+                      beforeUpload={() => false}
+                      maxCount={99}
+                      showUploadList={false}
+                      className="!rounded-lg !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-white [&.ant-upload-drag]:!rounded-lg"
+                    >
+                      <p className="ant-upload-drag-icon mb-1">
+                        <InboxOutlined style={{ fontSize: 28, color: '#b91c1c' }} />
+                      </p>
+                      <p className="ant-upload-text text-gray-600 text-sm font-medium">คลิกหรือลากไฟล์มาวาง</p>
+                    </Upload.Dragger>
+                    {list.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {list.map((file) => {
+                          const isImg = isImageFile(file)
+                          const thumbUrl = isImg ? thumbUrls[file.uid] : null
+                          return (
+                            <div
+                              key={file.uid}
+                              className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0"
+                            >
+                              <button
+                                type="button"
+                                onClick={() => removeFile(item.key, file.uid)}
+                                className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs"
+                                aria-label="ลบไฟล์"
+                              >
+                                <CloseOutlined />
+                              </button>
+                              {thumbUrl ? (
+                                <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
+                                  <FileOutlined style={{ fontSize: 20 }} />
+                                  <span className="text-[10px] truncate w-full text-center" title={file.name}>{file.name}</span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
-                    )
-                  })}
+                    )}
+                  </Form.Item>
                 </div>
-              </div>
-            )}
-            </Form.Item>
+              )
+            })}
           </div>
         </section>
 

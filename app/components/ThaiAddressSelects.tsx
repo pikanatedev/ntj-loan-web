@@ -34,6 +34,7 @@ export function ThaiAddressSelects({
 
   const provinceName = Form.useWatch(`${namePrefix}_province`, form)
   const districtName = Form.useWatch(`${namePrefix}_district`, form)
+  const subdistrictName = Form.useWatch(`${namePrefix}_subdistrict`, form)
 
   useEffect(() => {
     let cancelled = false
@@ -51,13 +52,14 @@ export function ThaiAddressSelects({
   }, [])
 
   useEffect(() => {
-    if (!provinceName || provinces.length === 0) {
+    if (!provinceName) {
       setDistricts([])
       form.setFieldValue(`${namePrefix}_district`, undefined)
       form.setFieldValue(`${namePrefix}_subdistrict`, undefined)
       form.setFieldValue(`${namePrefix}_postal_code`, undefined)
       return
     }
+    if (provinces.length === 0) return
     const province = provinces.find((p) => p.name_th === provinceName)
     if (!province) {
       setDistricts([])
@@ -79,12 +81,13 @@ export function ThaiAddressSelects({
   }, [provinceName, provinces, form, namePrefix])
 
   useEffect(() => {
-    if (!districtName || districts.length === 0) {
+    if (!districtName) {
       setSubDistricts([])
       form.setFieldValue(`${namePrefix}_subdistrict`, undefined)
       form.setFieldValue(`${namePrefix}_postal_code`, undefined)
       return
     }
+    if (districts.length === 0) return
     const district = districts.find((d) => d.name_th === districtName)
     if (!district) {
       setSubDistricts([])
@@ -129,7 +132,12 @@ export function ThaiAddressSelects({
           optionFilterProp="label"
           filterOption={filterOption}
           loading={loadingProvinces}
-          options={provinces.map((p) => ({ value: p.name_th, label: p.name_th }))}
+          options={[
+            ...provinces.map((p) => ({ value: p.name_th, label: p.name_th })),
+            ...(provinceName && !provinces.some((p) => p.name_th === provinceName)
+              ? [{ value: provinceName, label: provinceName }]
+              : []),
+          ]}
         />
       </Form.Item>
       <Form.Item name={`${namePrefix}_district`} label="เขต/อำเภอ" className={className}>
@@ -143,7 +151,12 @@ export function ThaiAddressSelects({
           filterOption={filterOption}
           loading={loadingDistricts}
           disabled={!provinceName}
-          options={districts.map((d) => ({ value: d.name_th, label: d.name_th }))}
+          options={[
+            ...districts.map((d) => ({ value: d.name_th, label: d.name_th })),
+            ...(districtName && !districts.some((d) => d.name_th === districtName)
+              ? [{ value: districtName, label: districtName }]
+              : []),
+          ]}
         />
       </Form.Item>
       <Form.Item name={`${namePrefix}_subdistrict`} label="แขวง/ตำบล" className={className}>
@@ -157,7 +170,12 @@ export function ThaiAddressSelects({
           filterOption={filterOption}
           loading={loadingSubDistricts}
           disabled={!districtName}
-          options={subDistricts.map((s) => ({ value: s.name_th, label: s.name_th }))}
+          options={[
+            ...subDistricts.map((s) => ({ value: s.name_th, label: s.name_th })),
+            ...(subdistrictName && !subDistricts.some((s) => s.name_th === subdistrictName)
+              ? [{ value: subdistrictName, label: subdistrictName }]
+              : []),
+          ]}
           onSelect={onSubDistrictSelect}
         />
       </Form.Item>

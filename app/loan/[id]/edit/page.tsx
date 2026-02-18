@@ -17,6 +17,96 @@ import {
   CommercialCarModelSelect,
 } from '@/app/components/CommercialCarSelects'
 import type { StaffUser, Loan, LoanAttachment, LoanType, BorrowerInfo } from '@/lib/types'
+import { getDocumentChecklist } from '@/lib/data/documentChecklist'
+
+function loanToInitialValues(row: Loan) {
+  const bo = row.borrower_info as BorrowerInfo | undefined
+  return {
+    loan_reference_number: row.loan_reference_number ?? undefined,
+    customer_name: row.customer_name ?? undefined,
+    id_card_number: row.id_card_number ?? undefined,
+    birth_date: row.birth_date ? dayjs(row.birth_date) : undefined,
+    ...(bo && {
+      id_card_expiry_date: bo.id_card_expiry_date ? dayjs(bo.id_card_expiry_date) : undefined,
+      nationality: bo.nationality ?? undefined,
+      age: bo.age ?? undefined,
+      marital_status: bo.marital_status ?? undefined,
+      children_count: bo.children_count ?? undefined,
+      company_history: bo.company_history ?? undefined,
+      company_history_type: bo.company_history_type ?? undefined,
+      education_level: bo.education_level ?? undefined,
+      payer: bo.payer ?? undefined,
+      car_user: bo.car_user ?? undefined,
+      car_user_name: bo.car_user_name ?? undefined,
+      car_user_phone: bo.car_user_phone ?? undefined,
+      address_no: bo.address_no ?? undefined,
+      address_moo: bo.address_moo ?? undefined,
+      address_village: bo.address_village ?? undefined,
+      address_soi: bo.address_soi ?? undefined,
+      address_road: bo.address_road ?? undefined,
+      address_subdistrict: bo.address_subdistrict ?? undefined,
+      address_district: bo.address_district ?? undefined,
+      address_province: bo.address_province ?? undefined,
+      address_postal_code: bo.address_postal_code ?? undefined,
+      address_type: bo.address_type ?? undefined,
+      address_years: bo.address_years ?? undefined,
+      ownership_type: bo.ownership_type ?? undefined,
+      rent_amount: bo.rent_amount ?? undefined,
+      phone_home: bo.phone_home ?? undefined,
+      phone_work: bo.phone_work ?? undefined,
+      phone_fax: bo.phone_fax ?? undefined,
+      mobile_phone: bo.mobile_phone ?? undefined,
+      email: bo.email ?? undefined,
+      line_id: bo.line_id ?? undefined,
+      facebook: bo.facebook ?? undefined,
+      instagram: bo.instagram ?? undefined,
+      map_note: bo.map_note ?? undefined,
+      occupation_type: bo.occupation_type ?? undefined,
+      business_size: bo.business_size ?? undefined,
+      business_type: bo.business_type ?? undefined,
+      asset_value: bo.asset_value ?? undefined,
+      land_value: bo.land_value ?? undefined,
+      employee_count: bo.employee_count ?? undefined,
+      workplace_name: bo.workplace_name ?? undefined,
+      workplace_address: bo.workplace_address ?? undefined,
+      position: bo.position ?? undefined,
+      department: bo.department ?? undefined,
+      income_salary: bo.income_salary ?? undefined,
+      income_commission: bo.income_commission ?? undefined,
+      income_other: bo.income_other ?? undefined,
+      income_foreign_country: bo.income_foreign_country ?? undefined,
+      income_foreign_amount: bo.income_foreign_amount ?? undefined,
+      payment_channel: bo.payment_channel ?? undefined,
+      bank_name: bo.bank_name ?? undefined,
+      bank_account: bo.bank_account ?? undefined,
+      payment_other: bo.payment_other ?? undefined,
+      years_current_job: bo.years_current_job ?? undefined,
+      years_total_job: bo.years_total_job ?? undefined,
+      prev_workplace_name: bo.prev_workplace_name ?? undefined,
+      prev_position: bo.prev_position ?? undefined,
+      prev_department: bo.prev_department ?? undefined,
+      monthly_car_installment: bo.monthly_car_installment ?? undefined,
+      monthly_house_installment: bo.monthly_house_installment ?? undefined,
+    }),
+    loan_type: (row.loan_type as LoanType) ?? 'personal_car',
+    car_brand: row.car_brand ?? undefined,
+    car_model: row.car_model ?? undefined,
+    car_type: row.car_type ?? undefined,
+    car_fuel_type: row.car_fuel_type ?? undefined,
+    registration_date: row.registration_date ? dayjs(row.registration_date) : undefined,
+    license_plate: row.license_plate ?? undefined,
+    registration_province: row.registration_province ?? undefined,
+    car_details: row.car_details ?? undefined,
+    residence_address: row.residence_address ?? undefined,
+    land_deed_no: row.land_deed_no ?? undefined,
+    residence_details: row.residence_details ?? undefined,
+    submission_date: row.submission_date ? dayjs(row.submission_date) : dayjs(),
+    loan_amount: row.loan_amount ?? undefined,
+    closing_amount: row.closing_amount ?? undefined,
+    term_months: row.term_months ?? undefined,
+    interest_rate: row.interest_rate ?? undefined,
+  }
+}
 
 export default function EditLoanPage() {
   const params = useParams()
@@ -26,7 +116,7 @@ export default function EditLoanPage() {
   const [loan, setLoan] = useState<Loan | null>(null)
   const [loading, setLoading] = useState(true)
   const [form] = Form.useForm()
-  const [fileList, setFileList] = useState<UploadFile[]>([])
+  const [fileListByType, setFileListByType] = useState<Record<string, UploadFile[]>>({})
   const [submitting, setSubmitting] = useState(false)
   const [idsToRemove, setIdsToRemove] = useState<string[]>([])
   const [existingFileUrls, setExistingFileUrls] = useState<Record<string, string>>({})
@@ -70,96 +160,19 @@ export default function EditLoanPage() {
         return
       }
       setLoan(row)
-      const bo = row.borrower_info as BorrowerInfo | undefined
-      form.setFieldsValue({
-        loan_reference_number: row.loan_reference_number ?? undefined,
-        customer_name: row.customer_name ?? undefined,
-        id_card_number: row.id_card_number ?? undefined,
-        birth_date: row.birth_date ? dayjs(row.birth_date) : undefined,
-        ...(bo && {
-          id_card_expiry_date: bo.id_card_expiry_date ? dayjs(bo.id_card_expiry_date) : undefined,
-          nationality: bo.nationality ?? undefined,
-          age: bo.age ?? undefined,
-          marital_status: bo.marital_status ?? undefined,
-          children_count: bo.children_count ?? undefined,
-          company_history: bo.company_history ?? undefined,
-          company_history_type: bo.company_history_type ?? undefined,
-          education_level: bo.education_level ?? undefined,
-          payer: bo.payer ?? undefined,
-          car_user: bo.car_user ?? undefined,
-          car_user_name: bo.car_user_name ?? undefined,
-          car_user_phone: bo.car_user_phone ?? undefined,
-          address_no: bo.address_no ?? undefined,
-          address_moo: bo.address_moo ?? undefined,
-          address_village: bo.address_village ?? undefined,
-          address_soi: bo.address_soi ?? undefined,
-          address_road: bo.address_road ?? undefined,
-          address_subdistrict: bo.address_subdistrict ?? undefined,
-          address_district: bo.address_district ?? undefined,
-          address_province: bo.address_province ?? undefined,
-          address_postal_code: bo.address_postal_code ?? undefined,
-          address_type: bo.address_type ?? undefined,
-          address_years: bo.address_years ?? undefined,
-          ownership_type: bo.ownership_type ?? undefined,
-          rent_amount: bo.rent_amount ?? undefined,
-          phone_home: bo.phone_home ?? undefined,
-          phone_work: bo.phone_work ?? undefined,
-          phone_fax: bo.phone_fax ?? undefined,
-          mobile_phone: bo.mobile_phone ?? undefined,
-          email: bo.email ?? undefined,
-          line_id: bo.line_id ?? undefined,
-          facebook: bo.facebook ?? undefined,
-          instagram: bo.instagram ?? undefined,
-          map_note: bo.map_note ?? undefined,
-          occupation_type: bo.occupation_type ?? undefined,
-          business_size: bo.business_size ?? undefined,
-          business_type: bo.business_type ?? undefined,
-          asset_value: bo.asset_value ?? undefined,
-          land_value: bo.land_value ?? undefined,
-          employee_count: bo.employee_count ?? undefined,
-          workplace_name: bo.workplace_name ?? undefined,
-          workplace_address: bo.workplace_address ?? undefined,
-          position: bo.position ?? undefined,
-          department: bo.department ?? undefined,
-          income_salary: bo.income_salary ?? undefined,
-          income_commission: bo.income_commission ?? undefined,
-          income_other: bo.income_other ?? undefined,
-          income_foreign_country: bo.income_foreign_country ?? undefined,
-          income_foreign_amount: bo.income_foreign_amount ?? undefined,
-          payment_channel: bo.payment_channel ?? undefined,
-          bank_name: bo.bank_name ?? undefined,
-          bank_account: bo.bank_account ?? undefined,
-          payment_other: bo.payment_other ?? undefined,
-          years_current_job: bo.years_current_job ?? undefined,
-          years_total_job: bo.years_total_job ?? undefined,
-          prev_workplace_name: bo.prev_workplace_name ?? undefined,
-          prev_position: bo.prev_position ?? undefined,
-          prev_department: bo.prev_department ?? undefined,
-          monthly_car_installment: bo.monthly_car_installment ?? undefined,
-          monthly_house_installment: bo.monthly_house_installment ?? undefined,
-        }),
-        loan_type: (row.loan_type as LoanType) ?? 'personal_car',
-        car_brand: row.car_brand ?? undefined,
-        car_model: row.car_model ?? undefined,
-        car_type: row.car_type ?? undefined,
-        car_fuel_type: row.car_fuel_type ?? undefined,
-        registration_date: row.registration_date ? dayjs(row.registration_date) : undefined,
-        license_plate: row.license_plate ?? undefined,
-        registration_province: row.registration_province ?? undefined,
-        car_details: row.car_details ?? undefined,
-        residence_address: row.residence_address ?? undefined,
-        land_deed_no: row.land_deed_no ?? undefined,
-        residence_details: row.residence_details ?? undefined,
-        submission_date: row.submission_date ? dayjs(row.submission_date) : dayjs(),
-        loan_amount: row.loan_amount ?? undefined,
-        closing_amount: row.closing_amount ?? undefined,
-        term_months: row.term_months ?? undefined,
-        interest_rate: row.interest_rate ?? undefined,
-      })
       setLoading(false)
     }
     fetchLoan()
   }, [id, user, form])
+
+  // เมื่อมี loan แล้ว ต้อง set ค่าฟอร์มเอง เพราะ Form ที่ใช้ form prop จะไม่เอา initialValues ไปใส่ store
+  useEffect(() => {
+    if (!loan) return
+    const values = loanToInitialValues(loan)
+    // set หลัง Form + ลูก mount แล้ว (รอบถัดไป) เพื่อให้ useWatch ในลูกได้ค่าตอน re-render
+    const t = setTimeout(() => form.setFieldsValue(values), 0)
+    return () => clearTimeout(t)
+  }, [loan, form])
 
   useEffect(() => {
     const attachments = (loan?.loan_attachments ?? []) as LoanAttachment[]
@@ -174,11 +187,6 @@ export default function EditLoanPage() {
     }
     loadUrls()
   }, [loan?.id, loan?.loan_attachments])
-
-  const existingAttachments = useMemo(() => {
-    const list = (loan?.loan_attachments ?? []) as LoanAttachment[]
-    return list.filter((a) => !idsToRemove.includes(a.id))
-  }, [loan?.loan_attachments, idsToRemove])
 
   const isImage = (name: string) => /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)
   const isPdf = (name: string) => /\.pdf$/i.test(name)
@@ -195,10 +203,11 @@ export default function EditLoanPage() {
     return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext ?? '')
   }
 
+  const allNewFiles = useMemo(() => Object.values(fileListByType).flat(), [fileListByType])
   useEffect(() => {
-    const uids = new Set(fileList.map((f) => f.uid))
+    const uids = new Set(allNewFiles.map((f) => f.uid))
     const next: Record<string, string> = {}
-    fileList.forEach((file) => {
+    allNewFiles.forEach((file) => {
       if (!isImageNewFile(file) || !file.originFileObj) return
       const url = newFileThumbUrlsRef.current[file.uid] ?? URL.createObjectURL(file.originFileObj)
       next[file.uid] = url
@@ -208,7 +217,7 @@ export default function EditLoanPage() {
     })
     newFileThumbUrlsRef.current = next
     setNewFileThumbUrls(next)
-  }, [fileList])
+  }, [allNewFiles])
 
   useEffect(() => {
     return () => {
@@ -217,8 +226,17 @@ export default function EditLoanPage() {
     }
   }, [])
 
-  const removeNewFile = (uid: string) => {
-    setFileList((prev) => prev.filter((f) => f.uid !== uid))
+  const removeNewFile = (documentType: string, uid: string) => {
+    setFileListByType((prev) => {
+      const list = prev[documentType] ?? []
+      const next = list.filter((f) => f.uid !== uid)
+      if (next.length === 0) {
+        const rest = { ...prev }
+        delete rest[documentType]
+        return rest
+      }
+      return { ...prev, [documentType]: next }
+    })
   }
 
   const onFinish = async (values: Record<string, unknown>) => {
@@ -363,19 +381,23 @@ export default function EditLoanPage() {
         }
       }
 
-      const rawFiles = fileList.map((f) => f.originFileObj).filter(Boolean)
-      const files = rawFiles as File[]
-      for (const file of files) {
-        const path = getSafeStoragePath(id, file)
-        const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file)
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError)
-          throw new Error(uploadError.message === 'Bucket not found' ? 'ไม่พบ Storage bucket กรุณาสร้าง bucket ใน Supabase Dashboard' : uploadError.message)
+      const docChecklist = getDocumentChecklist(String(values.loan_type || loan?.loan_type || 'personal_car'))
+      for (const item of docChecklist) {
+        const list = fileListByType[item.key] ?? []
+        const rawFiles = list.map((f) => f.originFileObj).filter(Boolean)
+        const files = rawFiles as File[]
+        for (const file of files) {
+          const path = getSafeStoragePath(id, file)
+          const { error: uploadError } = await supabase.storage.from(STORAGE_BUCKET).upload(path, file)
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError)
+            throw new Error(uploadError.message === 'Bucket not found' ? 'ไม่พบ Storage bucket กรุณาสร้าง bucket ใน Supabase Dashboard' : uploadError.message)
+          }
+          const { error: insertError } = await supabase
+            .from('loan_attachments')
+            .insert([{ loan_id: id, file_path: path, file_name: file.name, document_type: item.key }])
+          if (insertError) throw insertError
         }
-        const { error: insertError } = await supabase
-          .from('loan_attachments')
-          .insert([{ loan_id: id, file_path: path, file_name: file.name }])
-        if (insertError) throw insertError
       }
 
       message.success('บันทึกการแก้ไขเรียบร้อย')
@@ -388,8 +410,8 @@ export default function EditLoanPage() {
     }
   }
 
-  const normFile = (e: { fileList: UploadFile[] }) => {
-    setFileList(e.fileList)
+  const normFile = (documentType: string) => (e: { fileList: UploadFile[] }) => {
+    setFileListByType((prev) => ({ ...prev, [documentType]: e.fileList }))
   }
 
   const idCardRules = [
@@ -442,9 +464,25 @@ export default function EditLoanPage() {
   const formItemClassFull = formItemClass + ' md:col-span-2'
 
   const watchedLoanType = Form.useWatch<LoanType>('loan_type', form)
-  const loanType = watchedLoanType ?? 'personal_car'
+  const loanType = watchedLoanType ?? (loan?.loan_type as LoanType) ?? 'personal_car'
   const isLandTitle = loanType === 'land_title'
   const isPersonalCar = loanType === 'personal_car'
+  const documentChecklist = getDocumentChecklist(loanType)
+  const existingByType = useMemo(() => {
+    const list = (loan?.loan_attachments ?? []) as LoanAttachment[]
+    const kept = list.filter((a) => !idsToRemove.includes(a.id))
+    const map: Record<string, LoanAttachment[]> = {}
+    kept.forEach((att) => {
+      const key = att.document_type ?? '_other'
+      if (!map[key]) map[key] = []
+      map[key].push(att)
+    })
+    return map
+  }, [loan?.loan_attachments, idsToRemove])
+
+  useEffect(() => {
+    setFileListByType({})
+  }, [loanType])
 
   const watchedLoanAmount = Form.useWatch('loan_amount', form)
   const watchedTermMonths = Form.useWatch('term_months', form)
@@ -463,29 +501,31 @@ export default function EditLoanPage() {
   })()
 
   return (
-    <Form
-      form={form}
-      layout="vertical"
-      onFinish={loan ? onFinish : undefined}
-      className="space-y-6 sm:space-y-8"
-    >
-      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
-        {user == null || loading ? (
-          <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
-            <p className="text-gray-500">กำลังโหลด...</p>
-          </div>
-        ) : !loan ? (
-          <>
-            <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
-            <Link
-              href="/"
-              className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation"
-            >
-              กลับหน้ารายการ
-            </Link>
-          </>
-        ) : (
-          <>
+    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
+      {user == null || loading ? (
+        <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
+          <p className="text-gray-500">กำลังโหลด...</p>
+        </div>
+      ) : !loan ? (
+        <>
+          <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
+          <Link
+            href="/"
+            className="mt-3 inline-flex items-center justify-center bg-gray-200 text-gray-800 px-4 py-2.5 rounded-lg hover:bg-gray-300 font-medium min-h-[48px] touch-manipulation"
+          >
+            กลับหน้ารายการ
+          </Link>
+        </>
+      ) : (
+        <Form
+          form={form}
+          initialValues={loanToInitialValues(loan)}
+          key={loan.id}
+          layout="vertical"
+          onFinish={onFinish}
+          className="space-y-6 sm:space-y-8"
+        >
+          <div className="space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
               <h1 className="text-xl sm:text-2xl font-bold text-red-700">แก้ไขข้อมูลสินเชื่อ</h1>
               <div className="flex flex-wrap items-center gap-2">
@@ -925,68 +965,91 @@ export default function EditLoanPage() {
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
           <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('แนบเอกสาร')}
+            {sectionTitle('เช็คลิสต์เอกสารสินเชื่อ')}
           </div>
           <div className="p-4 sm:p-6 space-y-6">
-            {existingAttachments.length > 0 && (
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-3">เอกสารที่มีอยู่ (กด X เพื่อลบออกจากเคส)</p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {existingAttachments.map((att) => {
+            <p className="text-gray-600 text-sm -mt-2">
+              {isLandTitle ? 'จำนองโฉนดที่ดิน' : 'จำนำเล่มทะเบียนรถ'} — แก้ไข/เพิ่มเอกสารตามรายการด้านล่าง
+            </p>
+            {documentChecklist.map((item) => {
+              const existingForType = existingByType[item.key] ?? []
+              const newList = fileListByType[item.key] ?? []
+              const hasExisting = existingForType.length > 0
+              const hasNew = newList.length > 0
+              return (
+                <div key={item.key} className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+                  <Form.Item label={<span className="text-gray-700 font-medium">☐ {item.label}</span>} className="mb-0">
+                    {hasExisting && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {existingForType.map((att) => {
+                          const thumbUrl = existingFileUrls[att.file_path]
+                          const isImg = isImage(att.file_name)
+                          const isPdfFile = isPdf(att.file_name)
+                          return (
+                            <div key={att.id} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
+                              <button type="button" onClick={() => removeExistingAttachment(att.id)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
+                                <CloseOutlined />
+                              </button>
+                              {isImg && thumbUrl ? (
+                                <img src={thumbUrl} alt={att.file_name} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
+                                  {isPdfFile ? <FilePdfOutlined style={{ fontSize: 20, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 20 }} />}
+                                  <span className="text-[10px] truncate w-full text-center" title={att.file_name}>{att.file_name}</span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                    <Upload.Dragger multiple fileList={newList} onChange={normFile(item.key)} beforeUpload={() => false} maxCount={99} showUploadList={false} className="!rounded-lg !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-white [&.ant-upload-drag]:!rounded-lg">
+                      <p className="ant-upload-drag-icon mb-1"><InboxOutlined style={{ fontSize: 28, color: '#b91c1c' }} /></p>
+                      <p className="ant-upload-text text-gray-600 text-sm font-medium">คลิกหรือลากไฟล์มาวาง (เพิ่มเติม)</p>
+                    </Upload.Dragger>
+                    {hasNew && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {newList.map((file) => {
+                          const isImg = isImageNewFile(file)
+                          const thumbUrl = isImg ? newFileThumbUrls[file.uid] : null
+                          return (
+                            <div key={file.uid} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
+                              <button type="button" onClick={() => removeNewFile(item.key, file.uid)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
+                                <CloseOutlined />
+                              </button>
+                              {thumbUrl ? <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" /> : (
+                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
+                                  <FileOutlined style={{ fontSize: 20 }} />
+                                  <span className="text-[10px] truncate w-full text-center" title={file.name}>{file.name}</span>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </Form.Item>
+                </div>
+              )
+            })}
+            {(existingByType['_other']?.length ?? 0) > 0 && (
+              <div className="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
+                <p className="text-sm font-medium text-amber-800 mb-3">เอกสารอื่นๆ (ไม่มีประเภท)</p>
+                <div className="flex flex-wrap gap-2">
+                  {existingByType['_other'].map((att) => {
                     const thumbUrl = existingFileUrls[att.file_path]
                     const isImg = isImage(att.file_name)
                     const isPdfFile = isPdf(att.file_name)
                     return (
-                      <div
-                        key={att.id}
-                        className="relative rounded-xl border border-gray-200 bg-gray-50 overflow-hidden group"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => removeExistingAttachment(att.id)}
-                          className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
-                          aria-label="ลบไฟล์"
-                        >
-                          <CloseOutlined className="!text-xs" />
+                      <div key={att.id} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
+                        <button type="button" onClick={() => removeExistingAttachment(att.id)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
+                          <CloseOutlined />
                         </button>
-                        {isImg && thumbUrl ? (
-                          <>
-                            <div className="aspect-square bg-gray-100">
-                              <img
-                                src={thumbUrl}
-                                alt={att.file_name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
-                              {att.file_name}
-                            </p>
-                          </>
-                        ) : isImg && !thumbUrl ? (
-                          <>
-                            <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                              <span className="text-gray-400 text-xs">โหลด...</span>
-                            </div>
-                            <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
-                              {att.file_name}
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
-                              {isPdfFile ? (
-                                <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
-                              ) : (
-                                <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />
-                              )}
-                              <span className="text-xs mt-2 truncate w-full text-center" title={att.file_name}>
-                                {isPdfFile ? 'PDF' : att.file_name}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={att.file_name}>
-                              {att.file_name}
-                            </p>
-                          </>
+                        {isImg && thumbUrl ? <img src={thumbUrl} alt={att.file_name} className="w-full h-full object-cover" /> : (
+                          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
+                            {isPdfFile ? <FilePdfOutlined style={{ fontSize: 20, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 20 }} />}
+                            <span className="text-[10px] truncate w-full text-center" title={att.file_name}>{att.file_name}</span>
+                          </div>
                         )}
                       </div>
                     )
@@ -994,84 +1057,6 @@ export default function EditLoanPage() {
                 </div>
               </div>
             )}
-            <div>
-              <Form.Item
-                label={<span className="text-gray-700 font-medium">เพิ่มไฟล์ใหม่ (ถ้ามี)</span>}
-                className="mb-0"
-              >
-                <Upload.Dragger
-                  multiple
-                  fileList={fileList}
-                  onChange={normFile}
-                  beforeUpload={() => false}
-                  maxCount={999}
-                  showUploadList={false}
-                  className="!rounded-xl !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-gray-50/50 hover:!bg-red-50/30 [&.ant-upload-drag]:!rounded-xl"
-                >
-                  <p className="ant-upload-drag-icon mb-2">
-                    <InboxOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
-                  </p>
-                  <p className="ant-upload-text text-gray-700 font-medium">คลิกหรือลากไฟล์มาวางที่นี่</p>
-                  <p className="ant-upload-hint text-gray-500 text-sm mt-1">รายการไฟล์จะแสดงด้านล่าง (รูปแสดงเป็น thumbnail)</p>
-                </Upload.Dragger>
-              </Form.Item>
-              {fileList.length > 0 && (
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-3">ไฟล์ใหม่ที่เลือก ({fileList.length})</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {fileList.map((file) => {
-                      const isImg = isImageNewFile(file)
-                      const thumbUrl = isImg ? newFileThumbUrls[file.uid] : null
-                      return (
-                        <div
-                          key={file.uid}
-                          className="relative rounded-xl border border-gray-200 bg-gray-50 overflow-hidden group"
-                        >
-                          <button
-                            type="button"
-                            onClick={() => removeNewFile(file.uid)}
-                            className="absolute top-1.5 right-1.5 z-10 w-7 h-7 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
-                            aria-label="ลบไฟล์"
-                          >
-                            <CloseOutlined className="!text-xs" />
-                          </button>
-                          {thumbUrl ? (
-                            <>
-                              <div className="aspect-square bg-gray-100">
-                                <img
-                                  src={thumbUrl}
-                                  alt={file.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={file.name}>
-                                {file.name}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <div className="aspect-square flex flex-col items-center justify-center text-gray-500 p-3">
-                                {isPdf(file.name ?? '') ? (
-                                  <FilePdfOutlined style={{ fontSize: 40, color: '#b91c1c' }} />
-                                ) : (
-                                  <FileOutlined style={{ fontSize: 40, color: '#6b7280' }} />
-                                )}
-                                <span className="text-xs mt-2 truncate w-full text-center" title={file.name}>
-                                  {isPdf(file.name ?? '') ? 'PDF' : file.name}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500 truncate px-2 py-1.5 bg-white" title={file.name}>
-                                {file.name}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
         </section>
 
@@ -1088,9 +1073,9 @@ export default function EditLoanPage() {
           </Button>
         </div>
             </div>
-          </>
-        )}
-      </div>
-    </Form>
+          </div>
+        </Form>
+      )}
+    </div>
   )
 }
