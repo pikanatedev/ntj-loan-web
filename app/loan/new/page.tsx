@@ -384,6 +384,13 @@ export default function NewLoanPage() {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        onFinishFailed={({ errorFields }) => {
+          const count = errorFields?.length ?? 0
+          const firstErrors = errorFields?.slice(0, 3).map((f) => f.errors?.[0]).filter(Boolean) as string[] | undefined
+          const detail = firstErrors?.length ? ` เช่น ${firstErrors.join(', ')}` : ''
+          message.warning(`กรุณากรอกข้อมูลในส่วนที่จำเป็นให้ครบ (พบ ${count} รายการ)${detail}`, 5)
+        }}
+        scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
         className="space-y-6 sm:space-y-8"
         initialValues={{ submission_date: dayjs(), loan_type: 'personal_car' }}
       >
