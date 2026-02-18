@@ -18,7 +18,7 @@ import {
   CommercialCarModelSelect,
 } from '@/app/components/CommercialCarSelects'
 import type { StaffUser, LoanType, BorrowerInfo } from '@/lib/types'
-import { getDocumentChecklist } from '@/lib/data/documentChecklist'
+import { getDocItemsForCard, getAllDocumentKeys, DOC_ITEMS_BORROWER_PERSONAL } from '@/lib/data/documentChecklist'
 
 export default function NewLoanPage() {
   const router = useRouter()
@@ -30,9 +30,7 @@ export default function NewLoanPage() {
 
   const isLandTitle = loanType === 'land_title'
   const isPersonalCar = loanType === 'personal_car'
-  const documentChecklist = getDocumentChecklist(loanType)
   const [fileListByType, setFileListByType] = useState<Record<string, UploadFile[]>>({})
-  const allFiles = Object.values(fileListByType).flat()
 
   const watchedLoanAmount = Form.useWatch('loan_amount', form)
   const watchedTermMonths = Form.useWatch('term_months', form)
@@ -199,7 +197,7 @@ export default function NewLoanPage() {
         .eq('id', loan.id)
       if (updateRefError) throw updateRefError
 
-      for (const item of documentChecklist) {
+      for (const item of getAllDocumentKeys(loanType)) {
         const list = fileListByType[item.key] ?? []
         const rawFiles = list.map((f) => f.originFileObj).filter(Boolean)
         const files = rawFiles as File[]
@@ -334,6 +332,41 @@ export default function NewLoanPage() {
   const formItemClass = "w-full min-w-0 mb-4 [&_.ant-form-item-label]:!pt-0 [&_.ant-form-item-label>label]:!text-gray-700 [&_.ant-form-item-label>label]:!font-medium [&_.ant-form-item-control]:!w-full [&_.ant-input]:min-h-[44px] [&_.ant-input]:!rounded-lg [&_.ant-input]:w-full [&_.ant-picker]:min-h-[44px] [&_.ant-picker]:!rounded-lg [&_.ant-picker]:w-full [&_.ant-input-number]:!flex [&_.ant-input-number]:!w-full [&_.ant-input-number]:!max-w-full [&_.ant-input-number-input]:!min-h-[44px] [&_.ant-input-number-input]:!flex-1 [&_.ant-input-number-input]:!min-w-0 [&_.ant-input-number-input]:!rounded-lg"
   const formItemClassFull = formItemClass + " md:col-span-2"
 
+  /** แถวแนบเอกสารในกริด (ต่อจากฟิลด์อื่นใน Card) — ใส่ใน grid เป็น Form.Item ต่อจากฟิลด์สุดท้าย */
+  const docUploadField = (item: { key: string; label: string }) => {
+    const list = fileListByType[item.key] ?? []
+    return (
+      <Form.Item key={item.key} label={<span className="text-gray-700 font-medium">☐ {item.label}</span>} className={formItemClassFull}>
+        <Upload.Dragger
+          multiple
+          fileList={list}
+          onChange={normFile(item.key)}
+          beforeUpload={() => false}
+          maxCount={99}
+          showUploadList={false}
+          className="!rounded-lg !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-white [&.ant-upload-drag]:!rounded-lg"
+        >
+          <p className="ant-upload-drag-icon mb-1"><InboxOutlined style={{ fontSize: 28, color: '#b91c1c' }} /></p>
+          <p className="ant-upload-text text-gray-600 text-sm font-medium">คลิกหรือลากไฟล์มาวาง</p>
+        </Upload.Dragger>
+        {list.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {list.map((file) => {
+              const isImg = isImageFile(file)
+              const thumbUrl = isImg ? thumbUrls[file.uid] : null
+              return (
+                <div key={file.uid} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
+                  <button type="button" onClick={() => removeFile(item.key, file.uid)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์"><CloseOutlined /></button>
+                  {thumbUrl ? <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1"><FileOutlined style={{ fontSize: 20 }} /><span className="text-[10px] truncate w-full text-center" title={file.name}>{file.name}</span></div>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Form.Item>
+    )
+  }
+
   return (
     <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
@@ -414,6 +447,7 @@ export default function NewLoanPage() {
             <Form.Item name="car_user_phone" label="โทรผู้ใช้รถ" className={formItemClass}>
               <Input size="large" placeholder="ระบุเบอร์โทรศัพท์" className="!rounded-lg w-full" />
             </Form.Item>
+            {DOC_ITEMS_BORROWER_PERSONAL.map(docUploadField)}
           </div>
         </section>
 
@@ -574,6 +608,7 @@ export default function NewLoanPage() {
             <Form.Item name="monthly_house_installment" label="ภาระประจำเดือน — ค่างวดบ้าน (บาท)" className={formItemClass}>
               <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
             </Form.Item>
+            {getDocItemsForCard('ข้อมูลผู้กู้สินเชื่อ — 4. อาชีพและรายได้', loanType).map(docUploadField)}
           </div>
         </section>
 
@@ -639,15 +674,16 @@ export default function NewLoanPage() {
               <Form.Item name="car_details" label="รายละเอียด/ตำหนิของรถ" className={formItemClassFull}>
                 <Input.TextArea rows={3} placeholder="ระบุรายละเอียดหรือตำหนิ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
               </Form.Item>
+              {getDocItemsForCard('ข้อมูลรถ', loanType).map(docUploadField)}
             </div>
           </section>
         )}
 
-        {/* ข้อมูลที่อยู่อาศัย — แสดงเมื่อเลือกโฉนดที่ดิน */}
+        {/* ข้อมูลโฉนดที่ดิน — แสดงเมื่อเลือกโฉนดที่ดิน */}
         {isLandTitle && (
           <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
             <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-              {sectionTitle('ข้อมูลที่อยู่อาศัย')}
+              {sectionTitle('ข้อมูลโฉนดที่ดิน')}
             </div>
             <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
               <Form.Item name="residence_address" label="ที่อยู่" rules={[{ required: true, message: 'กรุณากรอกที่อยู่' }]} className={formItemClassFull}>
@@ -659,6 +695,7 @@ export default function NewLoanPage() {
               <Form.Item name="residence_details" label="รายละเอียดเพิ่มเติม" className={formItemClassFull}>
                 <Input.TextArea rows={3} placeholder="รายละเอียดอื่นๆ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
               </Form.Item>
+              {getDocItemsForCard('ข้อมูลโฉนดที่ดิน', loanType).map(docUploadField)}
             </div>
           </section>
         )}
@@ -763,75 +800,7 @@ export default function NewLoanPage() {
                 className="!rounded-lg w-full !bg-gray-50"
               />
             </Form.Item>
-          </div>
-        </section>
-
-        {/* แนบเอกสารตามเช็คลิสต์ */}
-        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('เช็คลิสต์เอกสารสินเชื่อ')}
-          </div>
-          <div className="p-4 sm:p-6 space-y-6">
-            <p className="text-gray-600 text-sm -mt-2">
-              {isLandTitle ? 'จำนองโฉนดที่ดิน' : 'จำนำเล่มทะเบียนรถ'} — อัปโหลดเอกสารตามรายการด้านล่าง
-            </p>
-            {documentChecklist.map((item) => {
-              const list = fileListByType[item.key] ?? []
-              return (
-                <div key={item.key} className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
-                  <Form.Item
-                    label={<span className="text-gray-700 font-medium">☐ {item.label}</span>}
-                    className="mb-0"
-                  >
-                    <Upload.Dragger
-                      multiple
-                      fileList={list}
-                      onChange={normFile(item.key)}
-                      beforeUpload={() => false}
-                      maxCount={99}
-                      showUploadList={false}
-                      className="!rounded-lg !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-white [&.ant-upload-drag]:!rounded-lg"
-                    >
-                      <p className="ant-upload-drag-icon mb-1">
-                        <InboxOutlined style={{ fontSize: 28, color: '#b91c1c' }} />
-                      </p>
-                      <p className="ant-upload-text text-gray-600 text-sm font-medium">คลิกหรือลากไฟล์มาวาง</p>
-                    </Upload.Dragger>
-                    {list.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {list.map((file) => {
-                          const isImg = isImageFile(file)
-                          const thumbUrl = isImg ? thumbUrls[file.uid] : null
-                          return (
-                            <div
-                              key={file.uid}
-                              className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => removeFile(item.key, file.uid)}
-                                className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs"
-                                aria-label="ลบไฟล์"
-                              >
-                                <CloseOutlined />
-                              </button>
-                              {thumbUrl ? (
-                                <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
-                                  <FileOutlined style={{ fontSize: 20 }} />
-                                  <span className="text-[10px] truncate w-full text-center" title={file.name}>{file.name}</span>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </Form.Item>
-                </div>
-              )
-            })}
+            {getDocItemsForCard('ข้อมูลสินเชื่อ', loanType).map(docUploadField)}
           </div>
         </section>
 

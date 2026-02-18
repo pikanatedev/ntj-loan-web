@@ -17,7 +17,16 @@ import {
   CommercialCarModelSelect,
 } from '@/app/components/CommercialCarSelects'
 import type { StaffUser, Loan, LoanAttachment, LoanType, BorrowerInfo } from '@/lib/types'
-import { getDocumentChecklist } from '@/lib/data/documentChecklist'
+import {
+  getDocumentSections,
+  getAllDocumentKeys,
+  DOC_ITEMS_BORROWER_PERSONAL,
+  DOC_ITEMS_INCOME,
+  DOC_ITEMS_VEHICLE,
+  DOC_ITEMS_LAND,
+  DOC_ITEMS_LOAN,
+  type DocumentChecklistItem,
+} from '@/lib/data/documentChecklist'
 
 function loanToInitialValues(row: Loan) {
   const bo = row.borrower_info as BorrowerInfo | undefined
@@ -381,8 +390,8 @@ export default function EditLoanPage() {
         }
       }
 
-      const docChecklist = getDocumentChecklist(String(values.loan_type || loan?.loan_type || 'personal_car'))
-      for (const item of docChecklist) {
+      const docKeys = getAllDocumentKeys(String(values.loan_type || loan?.loan_type || 'personal_car'))
+      for (const item of docKeys) {
         const list = fileListByType[item.key] ?? []
         const rawFiles = list.map((f) => f.originFileObj).filter(Boolean)
         const files = rawFiles as File[]
@@ -467,7 +476,7 @@ export default function EditLoanPage() {
   const loanType = watchedLoanType ?? (loan?.loan_type as LoanType) ?? 'personal_car'
   const isLandTitle = loanType === 'land_title'
   const isPersonalCar = loanType === 'personal_car'
-  const documentChecklist = getDocumentChecklist(loanType)
+  const documentSections = getDocumentSections(loanType)
   const existingByType = useMemo(() => {
     const list = (loan?.loan_attachments ?? []) as LoanAttachment[]
     const kept = list.filter((a) => !idsToRemove.includes(a.id))
@@ -479,6 +488,76 @@ export default function EditLoanPage() {
     })
     return map
   }, [loan?.loan_attachments, idsToRemove])
+
+  /** แสดงบล็อกแนบเอกสารใน Card (ใช้แทรกในแต่ละ section) */
+  const renderEditDocUpload = (items: DocumentChecklistItem[]) => {
+    if (items.length === 0) return null
+    return (
+      <div className="space-y-4 mt-4 pt-4 border-t border-gray-100">
+        {items.map((item) => {
+          const existingForType = existingByType[item.key] ?? []
+          const newList = fileListByType[item.key] ?? []
+          const hasExisting = existingForType.length > 0
+          const hasNew = newList.length > 0
+          return (
+            <div key={item.key} className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
+              <Form.Item label={<span className="text-gray-700 font-medium">☐ {item.label}</span>} className="mb-0">
+                {hasExisting && (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {existingForType.map((att) => {
+                      const thumbUrl = existingFileUrls[att.file_path]
+                      const isImg = isImage(att.file_name)
+                      const isPdfFile = isPdf(att.file_name)
+                      return (
+                        <div key={att.id} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
+                          <button type="button" onClick={() => removeExistingAttachment(att.id)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
+                            <CloseOutlined />
+                          </button>
+                          {isImg && thumbUrl ? (
+                            <img src={thumbUrl} alt={att.file_name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
+                              {isPdfFile ? <FilePdfOutlined style={{ fontSize: 20, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 20 }} />}
+                              <span className="text-[10px] truncate w-full text-center" title={att.file_name}>{att.file_name}</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+                <Upload.Dragger multiple fileList={newList} onChange={normFile(item.key)} beforeUpload={() => false} maxCount={99} showUploadList={false} className="!rounded-lg !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-white [&.ant-upload-drag]:!rounded-lg">
+                  <p className="ant-upload-drag-icon mb-1"><InboxOutlined style={{ fontSize: 28, color: '#b91c1c' }} /></p>
+                  <p className="ant-upload-text text-gray-600 text-sm font-medium">คลิกหรือลากไฟล์มาวาง (เพิ่มเติม)</p>
+                </Upload.Dragger>
+                {hasNew && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {newList.map((file) => {
+                      const isImg = isImageNewFile(file)
+                      const thumbUrl = isImg ? newFileThumbUrls[file.uid] : null
+                      return (
+                        <div key={file.uid} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
+                          <button type="button" onClick={() => removeNewFile(item.key, file.uid)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
+                            <CloseOutlined />
+                          </button>
+                          {thumbUrl ? <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" /> : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
+                              <FileOutlined style={{ fontSize: 20 }} />
+                              <span className="text-[10px] truncate w-full text-center" title={file.name}>{file.name}</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </Form.Item>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   useEffect(() => {
     setFileListByType({})
@@ -616,6 +695,7 @@ export default function EditLoanPage() {
               <Input size="large" placeholder="ระบุเบอร์โทรศัพท์" className="!rounded-lg w-full" />
             </Form.Item>
           </div>
+          {renderEditDocUpload(DOC_ITEMS_BORROWER_PERSONAL)}
         </section>
 
         {/* 2. ที่อยู่ปัจจุบัน */}
@@ -776,6 +856,7 @@ export default function EditLoanPage() {
               <InputNumber size="large" min={0} placeholder="ระบุบาท" className="!rounded-lg w-full !max-w-full" />
             </Form.Item>
           </div>
+          {renderEditDocUpload(DOC_ITEMS_INCOME)}
         </section>
 
         <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
@@ -839,13 +920,14 @@ export default function EditLoanPage() {
                 <Input.TextArea rows={3} placeholder="ระบุรายละเอียดหรือตำหนิ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
               </Form.Item>
             </div>
+            {renderEditDocUpload(DOC_ITEMS_VEHICLE)}
           </section>
         )}
 
         {isLandTitle && (
           <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
             <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-              {sectionTitle('ข้อมูลที่อยู่อาศัย')}
+              {sectionTitle('ข้อมูลโฉนดที่ดิน')}
             </div>
             <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
               <Form.Item name="residence_address" label="ที่อยู่" rules={[{ required: true, message: 'กรุณากรอกที่อยู่' }]} className={formItemClassFull}>
@@ -858,6 +940,7 @@ export default function EditLoanPage() {
                 <Input.TextArea rows={3} placeholder="รายละเอียดอื่นๆ (ถ้ามี)" className="!rounded-lg [&_.ant-input]:min-h-[88px]" />
               </Form.Item>
             </div>
+            {renderEditDocUpload(DOC_ITEMS_LAND)}
           </section>
         )}
 
@@ -961,78 +1044,15 @@ export default function EditLoanPage() {
               />
             </Form.Item>
           </div>
+          {renderEditDocUpload(DOC_ITEMS_LOAN)}
         </section>
 
-        <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-          <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
-            {sectionTitle('เช็คลิสต์เอกสารสินเชื่อ')}
-          </div>
-          <div className="p-4 sm:p-6 space-y-6">
-            <p className="text-gray-600 text-sm -mt-2">
-              {isLandTitle ? 'จำนองโฉนดที่ดิน' : 'จำนำเล่มทะเบียนรถ'} — แก้ไข/เพิ่มเอกสารตามรายการด้านล่าง
-            </p>
-            {documentChecklist.map((item) => {
-              const existingForType = existingByType[item.key] ?? []
-              const newList = fileListByType[item.key] ?? []
-              const hasExisting = existingForType.length > 0
-              const hasNew = newList.length > 0
-              return (
-                <div key={item.key} className="border border-gray-200 rounded-xl p-4 bg-gray-50/50">
-                  <Form.Item label={<span className="text-gray-700 font-medium">☐ {item.label}</span>} className="mb-0">
-                    {hasExisting && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {existingForType.map((att) => {
-                          const thumbUrl = existingFileUrls[att.file_path]
-                          const isImg = isImage(att.file_name)
-                          const isPdfFile = isPdf(att.file_name)
-                          return (
-                            <div key={att.id} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
-                              <button type="button" onClick={() => removeExistingAttachment(att.id)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
-                                <CloseOutlined />
-                              </button>
-                              {isImg && thumbUrl ? (
-                                <img src={thumbUrl} alt={att.file_name} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
-                                  {isPdfFile ? <FilePdfOutlined style={{ fontSize: 20, color: '#b91c1c' }} /> : <FileOutlined style={{ fontSize: 20 }} />}
-                                  <span className="text-[10px] truncate w-full text-center" title={att.file_name}>{att.file_name}</span>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                    <Upload.Dragger multiple fileList={newList} onChange={normFile(item.key)} beforeUpload={() => false} maxCount={99} showUploadList={false} className="!rounded-lg !border-2 !border-dashed !border-gray-200 hover:!border-red-300 !bg-white [&.ant-upload-drag]:!rounded-lg">
-                      <p className="ant-upload-drag-icon mb-1"><InboxOutlined style={{ fontSize: 28, color: '#b91c1c' }} /></p>
-                      <p className="ant-upload-text text-gray-600 text-sm font-medium">คลิกหรือลากไฟล์มาวาง (เพิ่มเติม)</p>
-                    </Upload.Dragger>
-                    {hasNew && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {newList.map((file) => {
-                          const isImg = isImageNewFile(file)
-                          const thumbUrl = isImg ? newFileThumbUrls[file.uid] : null
-                          return (
-                            <div key={file.uid} className="relative w-20 h-20 rounded-lg border border-gray-200 bg-white overflow-hidden shrink-0">
-                              <button type="button" onClick={() => removeNewFile(item.key, file.uid)} className="absolute top-0.5 right-0.5 z-10 w-5 h-5 rounded-full bg-black/50 hover:bg-red-600 text-white flex items-center justify-center text-xs" aria-label="ลบไฟล์">
-                                <CloseOutlined />
-                              </button>
-                              {thumbUrl ? <img src={thumbUrl} alt={file.name} className="w-full h-full object-cover" /> : (
-                                <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-1">
-                                  <FileOutlined style={{ fontSize: 20 }} />
-                                  <span className="text-[10px] truncate w-full text-center" title={file.name}>{file.name}</span>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </Form.Item>
-                </div>
-              )
-            })}
-            {(existingByType['_other']?.length ?? 0) > 0 && (
+        {(existingByType['_other']?.length ?? 0) > 0 && (
+          <section className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+            <div className="px-4 sm:px-6 pt-5 pb-1 border-b border-gray-100 bg-gray-50/50">
+              {sectionTitle('เอกสารอื่นๆ')}
+            </div>
+            <div className="p-4 sm:p-6">
               <div className="border border-amber-200 rounded-xl p-4 bg-amber-50/50">
                 <p className="text-sm font-medium text-amber-800 mb-3">เอกสารอื่นๆ (ไม่มีประเภท)</p>
                 <div className="flex flex-wrap gap-2">
@@ -1056,9 +1076,9 @@ export default function EditLoanPage() {
                   })}
                 </div>
               </div>
-            )}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
 
         <div className="pt-2">
           <Button

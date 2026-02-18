@@ -110,7 +110,7 @@ export type Loan = {
   /** จังหวัดที่จดทะเบียนรถ (ตามป้ายทะเบียน) */
   registration_province?: string | null
   car_details?: string | null
-  /** ข้อมูลที่อยู่อาศัย (โฉนดที่ดิน) */
+  /** ข้อมูลโฉนดที่ดิน (โฉนดที่ดิน) */
   residence_address?: string | null
   land_deed_no?: string | null
   residence_details?: string | null
