@@ -580,7 +580,8 @@ export default function EditLoanPage() {
   })()
 
   return (
-    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
+    <div className={loan ? 'pb-24 sm:pb-28' : ''}>
+      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       {user == null || loading ? (
         <div className="flex items-center justify-center min-h-screen bg-[#FBE437]">
           <p className="text-gray-500">กำลังโหลด...</p>
@@ -1096,6 +1097,28 @@ export default function EditLoanPage() {
           </div>
         </Form>
       )}
+
+      {/* ปุ่มลอยกดบันทึกได้ตลอด ไม่ต้องเลื่อนลงล่าง */}
+      {user != null && !loading && loan != null && (
+        <div
+          className="fixed bottom-0 left-0 right-0 z-50 px-3 sm:px-4 py-3 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+          style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+        >
+          <div className="max-w-4xl mx-auto">
+            <Button
+              type="primary"
+              size="large"
+              block
+              loading={submitting}
+              onClick={() => form.submit()}
+              className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20"
+            >
+              {submitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
     </div>
   )
 }

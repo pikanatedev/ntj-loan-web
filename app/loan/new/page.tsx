@@ -368,7 +368,8 @@ export default function NewLoanPage() {
   }
 
   return (
-    <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
+    <div className="pb-24 sm:pb-28">
+      <div className="px-3 sm:px-4 py-4 max-w-4xl mx-auto min-h-[calc(100dvh-52px)] sm:min-h-screen bg-[#FBE437]">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5 sm:mb-6">
         <h1 className="text-xl sm:text-2xl font-bold text-red-700">แบบฟอร์มเสนอสินเชื่อใหม่</h1>
         <Link
@@ -817,6 +818,26 @@ export default function NewLoanPage() {
           </Button>
         </div>
       </Form>
+    </div>
+
+      {/* ปุ่มลอยกดส่งได้ตลอด ไม่ต้องเลื่อนลงล่าง */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-50 px-3 sm:px-4 py-3 bg-white/95 backdrop-blur border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+        style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
+      >
+        <div className="max-w-4xl mx-auto">
+          <Button
+            type="primary"
+            size="large"
+            block
+            loading={submitting}
+            onClick={() => form.submit()}
+            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20"
+          >
+            {submitting ? 'กำลังส่ง...' : 'ส่งข้อมูลให้ผู้อนุมัติ'}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }
