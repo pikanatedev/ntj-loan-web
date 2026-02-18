@@ -925,6 +925,7 @@ export default function EditLoanPage() {
                 size="large"
                 placeholder="เลือกประเภทสินเชื่อ"
                 className="!rounded-lg w-full"
+                disabled
                 options={[
                   { value: '', label: 'เลือกประเภทสินเชื่อ' },
                   { value: 'personal_car', label: 'รถยนต์ส่วนบุคคล (รถยนต์นั่งไม่เกิน 7 ที่นั่ง)' },
