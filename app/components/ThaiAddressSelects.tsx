@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Form, Input, Select } from 'antd'
 import type { FormInstance } from 'antd'
 
@@ -31,10 +31,15 @@ export function ThaiAddressSelects({
   const [loadingProvinces, setLoadingProvinces] = useState(true)
   const [loadingDistricts, setLoadingDistricts] = useState(false)
   const [loadingSubDistricts, setLoadingSubDistricts] = useState(false)
+  const hasSeenProvinceRef = useRef(false)
+  const hasSeenDistrictRef = useRef(false)
 
   const provinceName = Form.useWatch(`${namePrefix}_province`, form)
   const districtName = Form.useWatch(`${namePrefix}_district`, form)
   const subdistrictName = Form.useWatch(`${namePrefix}_subdistrict`, form)
+
+  if (provinceName) hasSeenProvinceRef.current = true
+  if (districtName) hasSeenDistrictRef.current = true
 
   useEffect(() => {
     let cancelled = false
@@ -54,9 +59,11 @@ export function ThaiAddressSelects({
   useEffect(() => {
     if (!provinceName) {
       setDistricts([])
-      form.setFieldValue(`${namePrefix}_district`, undefined)
-      form.setFieldValue(`${namePrefix}_subdistrict`, undefined)
-      form.setFieldValue(`${namePrefix}_postal_code`, undefined)
+      if (hasSeenProvinceRef.current) {
+        form.setFieldValue(`${namePrefix}_district`, undefined)
+        form.setFieldValue(`${namePrefix}_subdistrict`, undefined)
+        form.setFieldValue(`${namePrefix}_postal_code`, undefined)
+      }
       return
     }
     if (provinces.length === 0) return
@@ -83,8 +90,10 @@ export function ThaiAddressSelects({
   useEffect(() => {
     if (!districtName) {
       setSubDistricts([])
-      form.setFieldValue(`${namePrefix}_subdistrict`, undefined)
-      form.setFieldValue(`${namePrefix}_postal_code`, undefined)
+      if (hasSeenDistrictRef.current) {
+        form.setFieldValue(`${namePrefix}_subdistrict`, undefined)
+        form.setFieldValue(`${namePrefix}_postal_code`, undefined)
+      }
       return
     }
     if (districts.length === 0) return
@@ -98,7 +107,11 @@ export function ThaiAddressSelects({
     fetch(`/api/thai-address/subdistricts?district_id=${district.id}`)
       .then((res) => res.json())
       .then((data: SubDistrict[]) => {
-        if (!cancelled) setSubDistricts(data)
+        if (!cancelled) {
+          setSubDistricts(data)
+          const sub = data.find((s) => s.name_th === subdistrictName)
+          if (sub) form.setFieldValue(`${namePrefix}_postal_code`, String(sub.zip_code))
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadingSubDistricts(false)
@@ -106,7 +119,7 @@ export function ThaiAddressSelects({
     return () => {
       cancelled = true
     }
-  }, [districtName, districts, form, namePrefix])
+  }, [districtName, districts, form, namePrefix, subdistrictName])
 
   const onSubDistrictSelect = useCallback(
     (value: string) => {
