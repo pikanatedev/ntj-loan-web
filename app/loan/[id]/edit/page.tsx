@@ -605,7 +605,7 @@ export default function EditLoanPage() {
           <p className="text-gray-500">กำลังโหลด...</p>
         </div>
       ) : !loan ? (
-        <>
+        <div data-testid="loan-edit-not-found">
           <p className="text-gray-500 text-sm sm:text-base">ไม่พบรายการนี้หรือไม่มีสิทธิ์แก้ไข</p>
           <Link
             href="/"
@@ -613,7 +613,7 @@ export default function EditLoanPage() {
           >
             กลับหน้ารายการ
           </Link>
-        </>
+        </div>
       ) : (
         <Form
           form={form}

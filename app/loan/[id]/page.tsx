@@ -416,6 +416,7 @@ export default function LoanDetailPage() {
           )}
           <Link
             href="/"
+            data-testid="loan-detail-back"
             className="edit-btn-gray inline-flex items-center justify-center px-4 py-2.5 sm:py-2 rounded-lg font-medium min-h-[48px] touch-manipulation shrink-0"
           >
             กลับ
