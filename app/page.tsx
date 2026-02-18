@@ -157,12 +157,14 @@ export default function ListPage() {
             inputMode="numeric"
             maxLength={6}
             autoComplete="one-time-code"
+            data-testid="login-pin-input"
             className="border border-gray-300 p-3 sm:p-2 w-full text-center text-2xl tracking-[0.4em] rounded-lg min-h-[48px]"
             onChange={(e) => setPin(e.target.value)}
           />
           <button
             type="button"
             onClick={handleLogin}
+            data-testid="login-submit"
             className="mt-5 w-full bg-red-700 text-white py-3.5 sm:py-2 rounded-lg hover:bg-red-800 min-h-[48px] text-base font-medium touch-manipulation"
           >
             เข้าสู่ระบบ
@@ -181,6 +183,7 @@ export default function ListPage() {
         {user.role === 'sale' && (
           <Link
             href="/loan/new"
+            data-testid="link-new-loan"
             className="edit-btn-red px-4 py-3 sm:py-2 rounded-lg text-center font-medium min-h-[48px] flex items-center justify-center touch-manipulation shrink-0"
           >
             สร้างแบบฟอร์มใหม่
@@ -207,7 +210,7 @@ export default function ListPage() {
                 size="large"
               />
             </div>
-            <div>
+            <div data-testid="filter-status">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">สถานะ</label>
               <Select
                 placeholder="เลือกสถานะ"
@@ -222,7 +225,7 @@ export default function ListPage() {
                 size="large"
               />
             </div>
-            <div className="lg:col-span-2 min-w-0">
+            <div className="lg:col-span-2 min-w-0" data-testid="filter-date-range">
               <label className="block text-sm font-medium text-gray-700 mb-1.5">วันที่เสนอสินเชื่อ</label>
               <RangePicker
                 value={submissionDateRange}

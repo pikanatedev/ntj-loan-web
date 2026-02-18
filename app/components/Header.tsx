@@ -60,6 +60,7 @@ export function Header() {
             <button
               type="button"
               onClick={handleLogout}
+              data-testid="header-logout"
               className="bg-red-700 text-white hover:bg-red-800 py-2 px-4 rounded-lg text-sm sm:text-base touch-manipulation font-medium"
             >
               ออกจากระบบ
