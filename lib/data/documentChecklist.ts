@@ -62,6 +62,7 @@ export const DOCUMENT_SECTIONS: DocumentSection[] = [
     cardTitle: 'ข้อมูลโฉนดที่ดิน',
     showWhenLoanType: 'land_title',
     items: [
+      { key: 'land_deed_ns3_original', label: 'โฉนดที่ดินตัวจริง (น.ส.3 ก.)' },
       { key: 'land_deed_original', label: 'โฉนดที่ดินตัวจริง (น.ส.4 จ.)' },
       { key: 'land_deed_copy', label: 'สำเนาโฉนดทุกหน้า' },
       { key: 'land_deed_registry_check', label: 'ตรวจสารบัญจดทะเบียนด้านหลัง' },
