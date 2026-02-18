@@ -70,7 +70,18 @@ function loanToInitialValues(row: Loan) {
       facebook: bo.facebook ?? undefined,
       instagram: bo.instagram ?? undefined,
       map_note: bo.map_note ?? undefined,
-      occupation_type: bo.occupation_type ?? undefined,
+      occupation_type: (() => {
+        const v = bo.occupation_type ?? undefined
+        const fixed = ['ข้าราชการ', 'ทหาร/ตำรวจ', 'ครู/อาจารย์', 'พนักงานออฟฟิศ', 'พนักงานรัฐวิสาหกิจ', 'นายหน้า/ตัวแทน', 'อาชีพอิสระ', 'อื่นๆ']
+        if (v && !fixed.includes(v)) return 'อื่นๆ'
+        return v
+      })(),
+      occupation_type_other: (() => {
+        const v = bo.occupation_type ?? undefined
+        const fixed = ['ข้าราชการ', 'ทหาร/ตำรวจ', 'ครู/อาจารย์', 'พนักงานออฟฟิศ', 'พนักงานรัฐวิสาหกิจ', 'นายหน้า/ตัวแทน', 'อาชีพอิสระ', 'อื่นๆ']
+        if (v && !fixed.includes(v)) return v
+        return undefined
+      })(),
       business_size: bo.business_size ?? undefined,
       business_type: bo.business_type ?? undefined,
       asset_value: bo.asset_value ?? undefined,
@@ -292,7 +303,11 @@ export default function EditLoanPage() {
         facebook: toStr(values.facebook),
         instagram: toStr(values.instagram),
         map_note: toStr(values.map_note),
-        occupation_type: toStr(values.occupation_type),
+        occupation_type: toStr(
+          values.occupation_type === 'อื่นๆ'
+            ? (String((values as { occupation_type_other?: string }).occupation_type_other ?? '').trim() || 'อื่นๆ')
+            : values.occupation_type
+        ),
         business_size: toStr(values.business_size),
         business_type: toStr(values.business_type),
         asset_value: toNum(values.asset_value),
@@ -564,6 +579,7 @@ export default function EditLoanPage() {
     setFileListByType({})
   }, [loanType])
 
+  const watchedOccupationType = Form.useWatch('occupation_type', form)
   const watchedLoanAmount = Form.useWatch('loan_amount', form)
   const watchedTermMonths = Form.useWatch('term_months', form)
   const watchedInterestRate = Form.useWatch('interest_rate', form)
@@ -787,8 +803,33 @@ export default function EditLoanPage() {
           </div>
           <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-x-6 md:gap-y-4">
             <Form.Item name="occupation_type" label="ประเภทอาชีพ" className={formItemClass}>
-              <Select size="large" placeholder="เลือกประเภทอาชีพ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกประเภทอาชีพ' }, { value: 'ข้าราชการ', label: 'ข้าราชการ' }, { value: 'ทหาร/ตำรวจ', label: 'ทหาร/ตำรวจ' }, { value: 'ครู/อาจารย์', label: 'ครู/อาจารย์' }, { value: 'พนักงานออฟฟิศ', label: 'พนักงานออฟฟิศ' }, { value: 'พนักงานรัฐวิสาหกิจ', label: 'พนักงานรัฐวิสาหกิจ' }, { value: 'นายหน้า/ตัวแทน', label: 'นายหน้า/ตัวแทน' }, { value: 'อาชีพอิสระ', label: 'อาชีพอิสระ' }]} />
+              <Select
+                size="large"
+                placeholder="เลือกประเภทอาชีพ"
+                className="!rounded-lg w-full"
+                allowClear
+                options={[
+                  { value: '', label: 'เลือกประเภทอาชีพ' },
+                  { value: 'ข้าราชการ', label: 'ข้าราชการ' },
+                  { value: 'ทหาร/ตำรวจ', label: 'ทหาร/ตำรวจ' },
+                  { value: 'ครู/อาจารย์', label: 'ครู/อาจารย์' },
+                  { value: 'พนักงานออฟฟิศ', label: 'พนักงานออฟฟิศ' },
+                  { value: 'พนักงานรัฐวิสาหกิจ', label: 'พนักงานรัฐวิสาหกิจ' },
+                  { value: 'นายหน้า/ตัวแทน', label: 'นายหน้า/ตัวแทน' },
+                  { value: 'อาชีพอิสระ', label: 'อาชีพอิสระ' },
+                  { value: 'อื่นๆ', label: 'อื่นๆ' },
+                ]}
+              />
             </Form.Item>
+            {watchedOccupationType === 'อื่นๆ' && (
+              <Form.Item
+                name="occupation_type_other"
+                label="ระบุประเภทอาชีพ (กรอกเอง)"
+                className={formItemClass}
+              >
+                <Input size="large" placeholder="กรอกประเภทอาชีพ" className="!rounded-lg w-full" />
+              </Form.Item>
+            )}
             <Form.Item name="business_size" label="กรณีค้าขาย/ธุรกิจส่วนตัว" className={formItemClass}>
               <Select size="large" placeholder="เลือกขนาดธุรกิจ" className="!rounded-lg w-full" allowClear options={[{ value: '', label: 'เลือกขนาดธุรกิจ' }, { value: 'ขนาดเล็ก', label: 'ขนาดเล็ก' }, { value: 'ขนาดกลาง', label: 'ขนาดกลาง' }, { value: 'ขนาดใหญ่', label: 'ขนาดใหญ่' }]} />
             </Form.Item>
