@@ -1089,18 +1089,6 @@ export default function EditLoanPage() {
           </section>
         )}
 
-        <div className="pt-2">
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            block
-            loading={submitting}
-            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20"
-          >
-            {submitting ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
-          </Button>
-        </div>
             </div>
           </div>
         </Form>

@@ -812,19 +812,6 @@ export default function NewLoanPage() {
             {getDocItemsForCard('ข้อมูลสินเชื่อ', loanType).map(docUploadField)}
           </div>
         </section>
-
-        <div className="pt-2">
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            block
-            loading={submitting}
-            className="!min-h-[52px] !text-base !rounded-xl !font-semibold touch-manipulation shadow-lg shadow-red-900/20"
-          >
-            {submitting ? 'กำลังส่ง...' : 'ส่งข้อมูลให้ผู้อนุมัติ'}
-          </Button>
-        </div>
       </Form>
     </div>
 
