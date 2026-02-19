@@ -241,6 +241,15 @@ export default function NewLoanPage() {
       }
 
       message.success('ส่งสินเชื่อสำเร็จ!')
+      try {
+        await fetch('/api/sms/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario: 1, loanId: loan.id }),
+        })
+      } catch {
+        // ไม่ block flow ถ้าส่ง SMS ไม่ได้
+      }
       router.push('/')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด กรุณาลองใหม่'

@@ -216,6 +216,7 @@ export default function LoanDetailPage() {
           status,
           approver_name: user.name,
           approver_comment: comment?.trim() || null,
+          approver_id: user.id,
         })
         .eq('id', id)
       if (updateError) {
@@ -242,6 +243,16 @@ export default function LoanDetailPage() {
             : 'ส่งกลับไปแก้ไขเรียบร้อย'
       )
       setCommentModal(null)
+      const smsScenario = commentModal === 'approve' ? 4 : commentModal === 'reject' ? 5 : 2
+      try {
+        await fetch('/api/sms/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario: smsScenario, loanId: id }),
+        })
+      } catch {
+        // ไม่ block flow ถ้าส่ง SMS ไม่ได้
+      }
       window.location.href = '/'
     } finally {
       setModalLoading(false)

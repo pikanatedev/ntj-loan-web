@@ -391,6 +391,18 @@ export default function EditLoanPage() {
 
       if (error) throw error
 
+      if (loan?.status === 'ส่งกลับไปแก้ไข') {
+        try {
+          await fetch('/api/sms/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario: 3, loanId: id }),
+          })
+        } catch {
+          // ไม่ block flow ถ้าส่ง SMS ไม่ได้
+        }
+      }
+
       const attachmentsToRemove = ((loan?.loan_attachments ?? []) as LoanAttachment[]).filter((a) =>
         idsToRemove.includes(a.id)
       )

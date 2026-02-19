@@ -1,4 +1,4 @@
-export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' | 'manager' }
+export type StaffUser = { id: string; name: string; role: 'sale' | 'approver' | 'manager'; phone?: string | null }
 
 export type LoanAttachment = {
   id: string
@@ -123,6 +123,8 @@ export type Loan = {
   status?: string | null
   approver_comment?: string | null
   approver_name?: string | null
+  /** id ของผู้อนุมัติที่ดำเนินการล่าสุด (ใช้สำหรับส่ง SMS แจ้งเมื่อ Sale แก้ไขแล้วส่งกลับ) */
+  approver_id?: string | null
   sales_name?: string | null
   created_at?: string | null
   loan_attachments?: LoanAttachment[]
